@@ -1,0 +1,674 @@
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 14:37:07
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 14:43:46
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+ERROR:BlenderGIS:87:Uncaught exception
+Traceback (most recent call last):
+  File "D:\Work\grid_engineering\BlenderGIS\operators\io_import_shp.py", line 340, in execute
+    prefs = bpy.context.preferences.addons[PKG].preferences
+KeyError: 'bpy_prop_collection[key]: key "BlenderGIS" not found'
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 14:45:47
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+ERROR:BlenderGIS:87:Uncaught exception
+Traceback (most recent call last):
+  File "D:\Work\grid_engineering\BlenderGIS\operators\io_import_shp.py", line 120, in listPredefCRS
+    return PredefCRS.getEnumItems()
+  File "D:\Work\grid_engineering\BlenderGIS\prefs.py", line 312, in getEnumItems
+    data = cls.getData()
+  File "D:\Work\grid_engineering\BlenderGIS\prefs.py", line 293, in getData
+    prefs = bpy.context.preferences.addons[PKG].preferences
+KeyError: 'bpy_prop_collection[key]: key "BlenderGIS" not found'
+ERROR:BlenderGIS:87:Uncaught exception
+Traceback (most recent call last):
+  File "D:\Work\grid_engineering\BlenderGIS\operators\io_import_shp.py", line 340, in execute
+    prefs = bpy.context.preferences.addons[PKG].preferences
+KeyError: 'bpy_prop_collection[key]: key "BlenderGIS" not found'
+ERROR:BlenderGIS.operators.io_import_shp:290:Shapefile import fails
+Traceback (most recent call last):
+  File "D:\Work\grid_engineering\BlenderGIS\operators\io_import_shp.py", line 288, in execute
+    extrusionAxis=self.extrusionAxis, separateObjects=self.separateObjects)
+  File "C:\Users\sette\anaconda3\2.82\scripts\modules\bpy\ops.py", line 199, in __call__
+    ret = op_call(self.idname_py(), C_dict, kw, C_exec, C_undo)
+RuntimeError: Error: Traceback (most recent call last):
+  File "D:\Work\grid_engineering\BlenderGIS\operators\io_import_shp.py", line 340, in execute
+    prefs = bpy.context.preferences.addons[PKG].preferences
+KeyError: 'bpy_prop_collection[key]: key "BlenderGIS" not found'
+
+location: C:\Users\sette\anaconda3\2.82\scripts\modules\bpy\ops.py:199
+
+
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 15:35:17
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 15:36:48
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+ERROR:BlenderGIS:87:Uncaught exception
+Traceback (most recent call last):
+  File "D:\Work\grid_engineering\BlenderGIS\operators\io_import_shp.py", line 340, in execute
+    prefs = bpy.context.preferences.addons[PKG].preferences
+KeyError: 'bpy_prop_collection[key]: key "BlenderGIS" not found'
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 15:37:44
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+ERROR:BlenderGIS:87:Uncaught exception
+Traceback (most recent call last):
+  File "D:\Work\grid_engineering\BlenderGIS\operators\io_import_shp.py", line 340, in execute
+    prefs = bpy.context.preferences.addons[PKG].preferences
+KeyError: 'bpy_prop_collection[key]: key "BlenderGIS" not found'
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 15:42:35
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 15:43:59
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 15:44:14
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 15:44:44
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 15:45:16
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:02:25
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:03:57
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:05:11
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:353:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:363:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:379:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+ERROR:BlenderGIS:87:Uncaught exception
+Traceback (most recent call last):
+  File "D:\Work\grid_engineering\BlenderGIS\operators\io_import_shp.py", line 712, in execute
+    if prefs.mergeDoubles:
+NameError: name 'prefs' is not defined
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:06:12
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:353:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:363:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:379:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:728:Build in 0.106816 seconds
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:06:48
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:353:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:363:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:379:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:728:Build in 0.124294 seconds
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:07:17
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:353:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:363:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:379:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:728:Build in 0.112309 seconds
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:07:28
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:353:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:363:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:379:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:728:Build in 1.136403 seconds
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:09:08
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:353:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:363:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:379:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:728:Build in 0.116676 seconds
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:09:38
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:353:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:363:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:379:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:728:Build in 0.113113 seconds
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:09:51
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:353:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:363:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:379:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:728:Build in 0.111985 seconds
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:10:26
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:353:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:363:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:379:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:728:Build in 0.157928 seconds
+INFO:BlenderGIS:83:###### Starting new Blender session : 2020-11-12 16:11:25
+DEBUG:BlenderGIS.core.checkdeps:9:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:20:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:34:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:46:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:353:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:363:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:379:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:728:Build in 0.106742 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-13 11:31:04
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+ERROR:BlenderGIS.core.checkdeps:44:Cannot install ImageIO's Freeimage plugin
+Traceback (most recent call last):
+  File "D:\Work\grid_engineering\BlenderGIS\core\checkdeps.py", line 41, in <module>
+    from .lib import imageio
+ImportError: cannot import name 'imageio' from 'BlenderGIS.core.lib' (unknown location)
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-13 11:33:35
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+ERROR:BlenderGIS.core.checkdeps:44:Cannot install ImageIO's Freeimage plugin
+Traceback (most recent call last):
+  File "D:\Work\grid_engineering\BlenderGIS\core\checkdeps.py", line 41, in <module>
+    from .lib import imageio
+ImportError: cannot import name 'imageio' from 'BlenderGIS.core.lib' (unknown location)
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.240727 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-13 11:35:36
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.097672 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-13 14:44:12
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.159449 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-13 15:08:19
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 2.174135 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-13 15:21:58
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.153338 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-13 15:23:19
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 1.106187 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-13 15:23:49
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.114152 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-13 15:24:15
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 1.104088 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-13 15:24:31
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.102159 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-19 09:56:54
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.320402 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-19 09:57:33
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.104178 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-19 10:29:01
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.145231 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-19 10:29:13
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.113291 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-19 10:29:38
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.098384 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-19 10:31:04
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.120624 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-19 10:33:53
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 1.114770 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-19 15:42:54
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.175957 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 10:19:15
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.178834 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 10:22:45
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.123424 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 10:25:43
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.149780 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 10:26:44
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 2.105725 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 11:41:28
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.161750 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 11:42:29
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.099890 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 11:43:20
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 2.123249 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 12:08:18
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.147216 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 12:23:44
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.137182 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 12:24:24
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'natural', 'place', 'province_l', 'region_lef']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 2.104828 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 12:41:45
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'name', 'name_en', 'natural', 'place', 'source']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 1.189547 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 12:42:21
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'name', 'name_en', 'natural', 'place', 'source']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.122955 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 12:42:45
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'name', 'name_en', 'natural', 'place', 'source']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.111663 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 12:44:48
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS.operators.io_import_shp:111:Read shapefile...
+INFO:BlenderGIS.operators.io_import_shp:121:Feature type : PolyLine
+DEBUG:BlenderGIS.operators.io_import_shp:137:DBF fields : ['id', '@id', 'name', 'name_en', 'natural', 'place', 'source']
+INFO:BlenderGIS.operators.io_import_shp:486:Build in 0.115974 seconds
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-23 13:06:42
+DEBUG:BlenderGIS.core.checkdeps:11:GDAL Python binding unavailable
+DEBUG:BlenderGIS.core.checkdeps:22:PyProj unavailable
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 09:34:53
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 10:00:10
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 10:02:26
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 10:02:57
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 10:04:56
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 14:35:19
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 14:45:03
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 14:45:25
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 14:45:43
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 14:49:36
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 14:52:26
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 14:53:07
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 14:53:17
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 14:53:46
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 14:54:09
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:05:35
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:06:17
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:27:56
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:28:31
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:29:09
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:29:27
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:30:57
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:41:13
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:50:00
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:53:00
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 15:53:31
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 16:08:04
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 16:09:47
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 16:11:04
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 16:13:26
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 16:14:16
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 16:15:18
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 16:16:51
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 16:39:53
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
+INFO:BlenderGIS:84:###### Starting new Blender session : 2020-11-24 16:40:20
+DEBUG:BlenderGIS.core.checkdeps:14:GDAL Python binding available
+DEBUG:BlenderGIS.core.checkdeps:25:PyProj available
+DEBUG:BlenderGIS.core.checkdeps:36:Pillow available
+DEBUG:BlenderGIS.core.checkdeps:48:ImageIO Freeimage plugin available
