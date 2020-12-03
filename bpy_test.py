@@ -65,6 +65,9 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--sea_points", nargs="+",
                         help="List of sea points where to close the dominion. e.g. lon1,lat1 lon2,lat2 ...",
                         default=["11.992,41.872", "12.080,41.680"])
+    parser.add_argument("-t", "--threshold",
+                        help="Threshold for the minimum distance to merge shapefile parts and remove double points",
+                        default="0.001")
     parser.add_argument("-o", "--output_shapefile", help="Shapefile to use as output",
                         default="./shp/test_dominion.shp")
     args = parser.parse_args()
@@ -77,7 +80,7 @@ if __name__ == "__main__":
 
     # Merging parts of shapefile
     matrix = [list(part.coords) for part in data_frame.geometry]
-    matrix = merge_parts(matrix)
+    matrix = merge_parts(matrix, float(args.threshold))
 
     # Creating dataframe
     linestrings = [LineString(line) for line in matrix]
