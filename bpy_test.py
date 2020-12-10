@@ -1,11 +1,13 @@
-import bpy
-import BlenderGIS.operators.io_import_shp as io_import_shp
-import BlenderGIS.operators.io_export_shp as io_export_shp
+# import bpy
+# import BlenderGIS.operators.io_import_shp as io_import_shp
+# import BlenderGIS.operators.io_export_shp as io_export_shp
 import shapefile
 import geopandas
 from geopy.distance import geodesic as dist
 from shapely.geometry import LineString
 import argparse
+from scipy.interpolate import interp1d
+import numpy as np
 
 
 def arrange_parts(i_part_one, i_part_two, situation):
@@ -71,12 +73,12 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output_shapefile", help="Shapefile to use as output",
                         default="./shp/test_dominion.shp")
     args = parser.parse_args()
-    file = args.input_shapefile
+    input_file = args.input_shapefile
     print(args.bbox)
     if args.bbox:
-        data_frame = geopandas.read_file(file, bbox=[float(coord) for coord in args.bbox])
+        data_frame = geopandas.read_file(input_file, bbox=[float(coord) for coord in args.bbox])
     else:
-        data_frame = geopandas.read_file(file)
+        data_frame = geopandas.read_file(input_file)
 
     # Merging parts of shapefile
     matrix = [list(part.coords) for part in data_frame.geometry]
@@ -95,7 +97,6 @@ if __name__ == "__main__":
         sea_points.append(coords)
 
     print(sea_points)
-
     # ok for 1,2, and 3 point of dominion bbox (no model over islands, we have a coastline)
     index_of_coastline = [idx for idx, part in enumerate(new_data_frame.geometry) if not part.is_ring][0]
     matrix = [list(part.coords) for part in new_data_frame.geometry]
@@ -105,15 +106,62 @@ if __name__ == "__main__":
     end_coast = coastline[-1]
 
     distances_from_start = [dist(start_coast, sea_point).km for sea_point in sea_points]
-    print(distances_from_start)
-    coastline.insert(0, sea_points[distances_from_start.index(min(distances_from_start))])
+    # coastline.insert(0, sea_points[distances_from_start.index(min(distances_from_start))])
 
     distances_from_end = [dist(end_coast, sea_point).km for sea_point in sea_points]
-    print(distances_from_end)
     copy_of_distances = distances_from_end.copy()
     while copy_of_distances:
         coastline.append(sea_points[distances_from_end.index(min(copy_of_distances))])
         copy_of_distances.remove(min(copy_of_distances))
+    coastline.append(coastline[0])
+
+    interps = []
+
+    def weighted_avg(coord_master, coord_slave, weight=1):
+        return ((coord_master*weight)+coord_slave)/(weight+1)
+
+    for sea_point in sea_points:
+        points = []
+        index_of_sea_point = coastline.index(sea_point)
+        print(index_of_sea_point)
+        x_point_before, y_point_before = coastline[index_of_sea_point-1]
+        x_point_after, y_point_after = coastline[index_of_sea_point+1]
+
+        x_point_before_near = weighted_avg(sea_point[0], x_point_before, 30)
+        y_point_before_near = weighted_avg(sea_point[1], y_point_before, 30)
+        x_point_after_near = weighted_avg(sea_point[0], x_point_after, 30)
+        y_point_after_near = weighted_avg(sea_point[1], y_point_after, 30)
+        points.append((x_point_before_near, y_point_before_near))
+        points.append((x_point_after_near, y_point_after_near))
+
+        weights = range(1, 50)
+        for i in weights:
+            x_middle_point_a = weighted_avg(sea_point[0], x_point_after_near, i)
+            y_middle_point_a = weighted_avg(sea_point[1], y_point_after_near, i)
+            points.append((x_middle_point_a, y_middle_point_a))
+            x_middle_point_b = weighted_avg(sea_point[0], x_point_before_near, i)
+            y_middle_point_b = weighted_avg(sea_point[1], y_point_before_near, i)
+            points.append((x_middle_point_b, y_middle_point_b))
+
+        interps.append(points)
+
+    for sea_point, interpolated_points in zip(sea_points, interps):
+        index_of_sea_point = coastline.index(sea_point)
+
+        distances = [dist(coastline[index_of_sea_point-1], interpolated_point).km for interpolated_point in interpolated_points]
+        print(distances[0])
+        print(sorted(distances)[0])
+
+        sorted_zip = sorted(zip(distances, interpolated_points))
+        points = [element for _, element in sorted_zip]
+
+        coastline[index_of_sea_point:index_of_sea_point] = points
+        # if dist(coastline[index_of_sea_point-1], interpolated_points[0]).km < \
+        #         dist(coastline[index_of_sea_point+1], interpolated_points[0]).km:
+        #     coastline[index_of_sea_point:index_of_sea_point] = interpolated_points[::-1]
+        # else:
+        #     coastline[index_of_sea_point:index_of_sea_point] = interpolated_points
+        coastline.remove(sea_point)
 
     matrix[index_of_coastline] = coastline
 
