@@ -9,6 +9,8 @@ import argparse
 from scipy.interpolate import interp1d
 import numpy as np
 from matplotlib import pyplot as plt
+import cmath
+import math
 
 
 def create_parser():
@@ -76,24 +78,158 @@ def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points):
         copy_of_distances.remove(min(copy_of_distances))
     coastline.append(coastline[0])
 
-    matrix[index_of_coastline] = smooth_vertex(coastline, len(sea_points))
-
+    matrix[index_of_coastline] = smooth_vertex(coastline, sea_points)
     linestrings = [LineString(line) for line in matrix]
     return geopandas.GeoDataFrame({"geometry": linestrings})
 
 
-def smooth_vertex(p_coastline, number_sea_points):
-    vicinity_factor = 25
-    n = len(p_coastline)
-    for i in range(1, number_sea_points+1):
-        value_vertex_1 = p_coastline[n-i]
-        value_vertex_2 = p_coastline[n-i-1]
-        value_vertex_3 = p_coastline[n-i-2]
+def weighted_avg(p_point_master, p_point_slave, p_weight):
+    return (
+        ((p_point_master[0]*p_weight)+p_point_slave[0])/(p_weight+1),
+        ((p_point_master[1]*p_weight)+p_point_slave[1])/(p_weight+1)
+    )
 
-        value_vertex_1_2 = ((value_vertex_1[0]+value_vertex_2[0]*(vicinity_factor-1))/vicinity_factor,
-                            (value_vertex_1[1]+value_vertex_2[1]*(vicinity_factor-1))/vicinity_factor)
-        value_vertex_2_3 = ((value_vertex_3[0]+value_vertex_2[0]*(vicinity_factor-1))/vicinity_factor,
-                            (value_vertex_3[1]+value_vertex_2[1]*(vicinity_factor-1))/vicinity_factor)
+
+def line_passing_two_points(first, second):
+    try:
+        slope = (first[1] - second[1]) / (first[0] - second[0])
+        intercept = second[1] - ((first[1]-second[1])/(first[0]-second[0]))*second[0]
+    except ZeroDivisionError:
+        # Equation is of type x = const
+        slope = None
+        intercept = first[0]
+
+    return slope, intercept
+
+
+def solve_quadratic(a, b, c):
+    discriminant = (b ** 2) - (4 * a * c)
+    x_1 = (-b - cmath.sqrt(discriminant)) / (2 * a)
+    x_2 = (-b + cmath.sqrt(discriminant)) / (2 * a)
+    return x_1.real, x_2.real
+
+
+def point_on_line_with_distance_known(slope, intercept, distance, point):
+    if slope is None:
+        point_1 = (intercept, point[1]+distance)
+        point_2 = (intercept, point[1]-distance)
+        return point_1, point_2
+    temp = point[1]-intercept
+    a = 1 + slope**2
+    b = -2*(slope*temp + point[0])
+    c = point[0]**2 + temp**2 - distance**2
+
+    x_1, x_2 = solve_quadratic(a, b, c)
+    x_1, x_2 = x_1, x_2
+    y_1 = slope*x_1 + intercept
+    y_2 = slope*x_2 + intercept
+    return (x_1, y_1), (x_2, y_2)
+
+
+def line_orth_to_line_passing_for_point(slope, point):
+    if slope is None:
+        orth_slope = 0
+        orth_intercept = point[1]
+        return orth_slope, orth_intercept
+    orth_slope = - 1/slope
+    orth_intercept = point[0]/slope + point[1]
+    return orth_slope, orth_intercept
+
+
+def circumference_for_two_points_and_center_on_line(slope, intercept, first, second):
+    if slope is None:
+        a = 1
+        b = 0
+    else:
+        a = slope
+        b = -1
+    c = intercept
+    t_1 = -first[0]**2 - first[1]**2
+    t_2 = -second[0]**2 - second[1]**2
+    # Solving Ax = b for the equation system
+    parameters = [first[0], first[1], 1,
+                  second[0], second[1], 1,
+                  -a/2, -b/2, 0]
+    known_terms = [t_1, t_2, c]
+    parameters_matrix = np.array(parameters)
+    parameters_matrix.shape = (3, 3)
+    print(parameters_matrix, known_terms)
+    print(np.linalg.cond(parameters_matrix))
+    parameters_matrix_inv = np.linalg.inv(parameters_matrix)
+    circle_params = np.dot(parameters_matrix_inv, known_terms)
+    return circle_params
+
+
+def test_two_points_for_boundaries(bound_1, bound_2, point_1, point_2):
+    if bound_1[0] <= bound_2[0] and bound_1[1] <= bound_2[1]:
+        if bound_1[0] <= point_1[0] <= bound_2[0] and bound_1[1] <= point_1[1] <= bound_2[1]:
+            return point_1
+        elif bound_1[0] <= point_2[0] <= bound_2[0] and bound_1[1] <= point_2[1] <= bound_2[1]:
+            return point_2
+        else:
+            raise ArithmeticError("The point is not between boundaries.")
+    elif bound_1[0] <= bound_2[0] and bound_1[1] > bound_2[1]:
+        if bound_1[0] <= point_1[0] <= bound_2[0] and bound_1[1] > point_1[1] > bound_2[1]:
+            return point_1
+        elif bound_1[0] <= point_2[0] <= bound_2[0] and bound_1[1] > point_2[1] > bound_2[1]:
+            return point_2
+        else:
+            raise ArithmeticError("The point is not between boundaries.")
+    elif bound_1[0] > bound_2[0] and bound_1[1] > bound_2[1]:
+        if bound_1[0] > point_1[0] > bound_2[0] and bound_1[1] > point_1[1] > bound_2[1]:
+            return point_1
+        elif bound_1[0] > point_2[0] > bound_2[0] and bound_1[1] > point_2[1] > bound_2[1]:
+            return point_2
+        else:
+            raise ArithmeticError("The point is not between boundaries.")
+    else:
+        if bound_1[0] > point_1[0] > bound_2[0] and bound_1[1] <= point_1[1] <= bound_2[1]:
+            return point_1
+        elif bound_1[0] > point_2[0] > bound_2[0] and bound_1[1] <= point_2[1] <= bound_2[1]:
+            return point_2
+        else:
+            raise ArithmeticError("The point is not between boundaries.")
+
+
+def smooth_vertex(p_coastline, p_sea_points):
+    vicinity_factor = 5
+    interps = []
+    p_sea_points = [p_sea_points[1]]
+    for sea_point in p_sea_points:
+        index_of_sea_point = p_coastline.index(sea_point)
+        point_before = p_coastline[index_of_sea_point-1]
+        point_after = p_coastline[index_of_sea_point + 1]
+
+        point_before_near = weighted_avg(sea_point, point_before, vicinity_factor)
+        distance = math.sqrt((point_before_near[0]-sea_point[0])**2 + (point_before_near[1]-sea_point[1])**2)
+
+        # Find line passing through sea point and next point
+        slope, intercept = line_passing_two_points(sea_point, point_after)
+        # Find gemini point (on the found line, same distance as the first)
+        point_1, point_2 = point_on_line_with_distance_known(slope, intercept, distance, sea_point)
+        point_after_near = test_two_points_for_boundaries(sea_point, point_after, point_1, point_2)
+        # Find line passing trough gemini points
+        slope_near, _ = line_passing_two_points(point_before_near, point_after_near)
+        # Find orthogonal line passing through sea point
+        slope_orth, intercept_orth = line_orth_to_line_passing_for_point(slope_near, sea_point)
+        print(slope_orth, intercept_orth, point_before_near, point_after_near)
+        circle_params = circumference_for_two_points_and_center_on_line(slope_orth, intercept_orth,
+                                                                        point_before_near, point_after_near)
+        circle_points = []
+        print(circle_params)
+        new_x = np.linspace(point_before_near[0], point_after_near[0], 10)
+        a = 1
+        b = circle_params[1]
+        for x in new_x:
+            c = x**2 + circle_params[1]*x + circle_params[2]
+            y_1, y_2 = solve_quadratic(a, b, c)
+            point = test_two_points_for_boundaries(point_before_near, point_after_near, (x, y_1), (x, y_2))
+            circle_points.append(point)
+        interps.append(circle_points)
+    for sea_point, interpolated_points in zip(p_sea_points, interps):
+        index_of_sea_point = p_coastline.index(sea_point)
+        p_coastline[index_of_sea_point:index_of_sea_point] = interpolated_points
+        p_coastline.remove(sea_point)
 
     return p_coastline
 
@@ -184,6 +320,7 @@ if __name__ == "__main__":
     while is_fine.lower() != "y":
         dominion_data_frame = close_dominion(input_shapefile, args.bbox, args.threshold, args.sea_points)
         plot_shapefile(dominion_data_frame)
+        break
         is_fine = input("\nIs this fine? Y or N ")
         if is_fine.lower() != "y":
             args = prompt_for_data(args)
