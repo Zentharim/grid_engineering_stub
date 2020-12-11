@@ -1,28 +1,20 @@
 # import bpy
 # import BlenderGIS.operators.io_import_shp as io_import_shp
 # import BlenderGIS.operators.io_export_shp as io_export_shp
-import shapefile
 import geopandas
 from geopy.distance import geodesic as dist
 from shapely.geometry import LineString
 import argparse
-from scipy.interpolate import interp1d
-import numpy as np
 from matplotlib import pyplot as plt
-import cmath
-import math
 
 
 class SmoothingError(Exception):
     def __init__(self, *args, **kwargs):
-        default_message = 'The smoothing degree is too high. Retry with a smaller one.'
+        default_message = "The smoothing degree is too high. Retry with a smaller one."
 
-        # if any arguments are passed...
         if args or kwargs:
-            # ... pass them to the super constructor
             super().__init__(*args, **kwargs)
-        else:  # else, the exception was raised without arguments ...
-            # ... pass the default message to the super constructor
+        else:
             super().__init__(default_message)
 
 
@@ -51,9 +43,9 @@ def create_parser():
     return l_args
 
 
-def smooth_corners(line, degree):
-    offset = line.parallel_offset(degree, 'right', join_style=1)
-    offset2 = offset.parallel_offset(degree, 'right', join_style=1)
+def smooth_corners(p_line, p_degree):
+    offset = p_line.parallel_offset(p_degree, "right", join_style=1)
+    offset2 = offset.parallel_offset(p_degree, "right", join_style=1)
     return list(offset2.coords)[1:-1]
 
 
@@ -135,25 +127,25 @@ def prompt_for_data(p_args):
     return p_args
 
 
-def arrange_parts(i_part_one, i_part_two, situation):
+def arrange_parts(p_part_one, p_part_two, p_situation):
     results = [
-        i_part_two[::-1] + i_part_one,
-        i_part_two + i_part_one,
-        i_part_one + i_part_two,
-        i_part_one + i_part_two[::-1]
+        p_part_two[::-1] + p_part_one,
+        p_part_two + p_part_one,
+        p_part_one + p_part_two,
+        p_part_one + p_part_two[::-1]
     ]
-    return results[situation]
+    return results[p_situation]
 
 
 # FUNCTION TO MERGE PARTS OF SHAPEFILE
-def merge_parts(io_matrix, i_threshold=0.001):
-    len_matrix = len(io_matrix)
+def merge_parts(p_matrix, p_threshold=0.001):
+    len_matrix = len(p_matrix)
     index = 0
-    while index < len(io_matrix):
+    while index < len(p_matrix):
         other_index = index + 1
-        while other_index < len(io_matrix):
-            part = io_matrix[index]
-            other_part = io_matrix[other_index]
+        while other_index < len(p_matrix):
+            part = p_matrix[index]
+            other_part = p_matrix[other_index]
 
             distances = [
                 dist(part[0], other_part[0]).km,
@@ -162,20 +154,20 @@ def merge_parts(io_matrix, i_threshold=0.001):
                 dist(part[-1], other_part[-1]).km
             ]
 
-            if min(distances) < i_threshold:
-                io_matrix[index] = arrange_parts(part, other_part, distances.index(min(distances)))
+            if min(distances) < p_threshold:
+                p_matrix[index] = arrange_parts(part, other_part, distances.index(min(distances)))
             else:
                 other_index += 1
                 continue
 
             try:
-                del io_matrix[other_index]
+                del p_matrix[other_index]
             except IndexError:
                 pass
         index += 1
-    if len_matrix == len(io_matrix):
-        return io_matrix
-    return merge_parts(io_matrix, i_threshold)
+    if len_matrix == len(p_matrix):
+        return p_matrix
+    return merge_parts(p_matrix, p_threshold)
 
 
 def plot_shapefile(p_dataframe):
