@@ -1,6 +1,3 @@
-# import bpy
-# import BlenderGIS.operators.io_import_shp as io_import_shp
-# import BlenderGIS.operators.io_export_shp as io_export_shp
 import geopandas
 from geopy.distance import geodesic as dist
 from shapely.geometry import LineString
@@ -95,7 +92,9 @@ def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoot
     coastline[-1] = coastline[0]
     matrix[index_of_coastline] = coastline
     linestrings = [LineString(line) for line in matrix]
-    return geopandas.GeoDataFrame({"geometry": linestrings})
+    types = ["island"]*len(matrix)
+    types[index_of_coastline] = "coastline"
+    return geopandas.GeoDataFrame({"geometry": linestrings, "type": types})
 
 
 def prompt_for_data(p_args):
@@ -179,6 +178,31 @@ def plot_shapefile(p_dataframe):
     plt.show()
 
 
+def shapefile_to_geo(p_dataframe):
+    buffer = ""
+    point_counter = 1
+    line_counter = 1
+    last_point = 1
+    for shape in p_dataframe.geometry:
+        for point in list(shape.coords):
+            buffer += "Point({}) = {{{}, {}, 0, 1.0}};\n".format(point_counter, point[0], point[1])
+            point_counter += 1
+        buffer += "Line({}) = {{{}: {}, {}}};\n".format(line_counter, last_point, point_counter-1, last_point)
+        last_point = point_counter
+        line_counter += 1
+        buffer += "Line Loop({}) = {{{}}};\n".format(line_counter, line_counter-1)
+        line_counter += 1
+    buffer += "Plane Surface({}) = {{2".format(line_counter)
+    for i in range(4, line_counter, 2):
+        buffer += ", {}".format(i)
+    buffer += "};\n"
+    buffer += "Mesh.CharacteristicLengthExtendFromBoundary = 0;\nMesh.Algorithm = 6;\n"
+    geo_file = open("./sample.geo", "w")
+    geo_file.write(buffer)
+    geo_file.close()
+    return buffer
+
+
 if __name__ == "__main__":
     args = create_parser()
     input_shapefile = args.input_shapefile
@@ -189,6 +213,8 @@ if __name__ == "__main__":
         try:
             dominion_data_frame = close_dominion(input_shapefile, args.bbox, args.threshold, args.sea_points,
                                                  float(args.smoothing_degree))
+            shapefile_to_geo(dominion_data_frame)
+            quit()
             plot_shapefile(dominion_data_frame)
             is_fine = input("\nIs this fine? Y or N ")
         except SmoothingError:
@@ -200,37 +226,3 @@ if __name__ == "__main__":
         dominion_data_frame.to_file(dominion_file)
     except ValueError:
         print("Check your bbox, it seems the coastline is not there.")
-
-
-# Subdivide dominion on Blender
-# dominion_smooth_file = "./shp/test_dominion_smooth.shp"
-# # PULIZIA BLENDER
-# print(list(bpy.data.objects))
-# print(bpy.data.objects)
-# for element in bpy.data.objects:
-#     bpy.data.objects.remove(element)
-# bpy.data.meshes.remove(bpy.data.meshes["Cube"])
-# print(bpy.data.objects)
-
-# BLENDERGIS
-# io_import_shp.register()
-# bpy.ops.importgis.shapefile("EXEC_DEFAULT", filepath=dominion_file)
-#
-# bpy.ops.object.mode_set(mode='OBJECT')
-# obj = bpy.context.active_object
-# print("EHI")
-# print(obj)
-# bpy.ops.object.mode_set(mode='EDIT')
-# bpy.ops.mesh.select_mode(type="VERT")
-# bpy.ops.mesh.select_all(action='DESELECT')
-# bpy.ops.object.mode_set(mode='OBJECT')
-# obj.data.vertices[-1].select = True
-# obj.data.vertices[-2].select = True
-# bpy.ops.object.mode_set(mode='EDIT')
-# bpy.ops.mesh.subdivide(number_cuts=160)
-# bpy.ops.mesh.select_all(action='SELECT')
-# bpy.ops.object.mode_set(mode='OBJECT')
-#
-# io_export_shp.register()
-# bpy.ops.exportgis.shapefile("EXEC_DEFAULT", filepath=dominion_smooth_file)
-# bpy.ops.exportgis.shapefile()
