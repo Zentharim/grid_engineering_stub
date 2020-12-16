@@ -3,6 +3,8 @@ from geopy.distance import geodesic as dist
 from shapely.geometry import LineString
 import argparse
 from matplotlib import pyplot as plt
+import gmsh
+import os
 
 
 class SmoothingError(Exception):
@@ -32,8 +34,8 @@ def create_parser():
     l_parser.add_argument("-t", "--threshold",
                           help="Threshold for the minimum distance to merge shapefile parts and remove double points",
                           default="0.001")
-    l_parser.add_argument("-o", "--output_shapefile", help="Shapefile to use as output",
-                          default="./shp/test_dominion.shp")
+    l_parser.add_argument("-o", "--output_directory", help="Directory where to save the output",
+                          default="./output")
     l_parser.add_argument("-d", "--smoothing_degree", help="Degrees for the smoothing",
                           default="0.01")
     l_args = l_parser.parse_args()
@@ -44,6 +46,15 @@ def smooth_corners(p_line, p_degree):
     offset = p_line.parallel_offset(p_degree, "right", join_style=1)
     offset2 = offset.parallel_offset(p_degree, "right", join_style=1)
     return list(offset2.coords)[1:-1]
+
+
+def remove_doubles(p_list, p_threshold=0.001):
+    counter = 0
+    while counter < len(p_list)-1:
+        if dist(p_list[counter], p_list[counter+1]).km < p_threshold:
+            del p_list[counter+1]
+        counter += 1
+    return p_list
 
 
 def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoothing_degree):
@@ -90,14 +101,16 @@ def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoot
         raise SmoothingError
     coastline[-1:-1] = dominion_closure
     coastline[-1] = coastline[0]
-    matrix[index_of_coastline] = coastline
+    for index, line in enumerate(matrix):
+        matrix[index] = remove_doubles(matrix[index])
+    # matrix[index_of_coastline] = remove_doubles(coastline)
     linestrings = [LineString(line) for line in matrix]
     types = ["island"]*len(matrix)
     types[index_of_coastline] = "coastline"
-    return geopandas.GeoDataFrame({"geometry": linestrings, "type": types})
+    return geopandas.GeoDataFrame({"geometry": linestrings, "types": types}), len(dominion_closure)
 
 
-def prompt_for_data(p_args):
+def prompt_for_boundary_data(p_args):
     change_bbox = input("\nWould you like to change bounding box? Y or N ")
     change_sea_points = input("\nWould you like to change sea points? Y or N ")
     change_smoothing_degree = input("\nWould you like to change smoothing degree? Y or N ")
@@ -124,6 +137,23 @@ def prompt_for_data(p_args):
         smoothing_degree = input("\nInsert smoothing degree ")
         setattr(args, "smoothing_degree", smoothing_degree)
     return p_args
+
+
+def prompt_for_mesh_data():
+    dist_max = input("\nInsert DistMax: ")
+    dist_min = input("\nInsert DistMin: ")
+    lc_max = input("\nInsert LcMax: ")
+    lc_min = input("\nInsert LcMin: ")
+    # dist_max = 0.1
+    # dist_min = 0.05
+    # lc_max = 0.03
+    # lc_min = 0.005
+    return {
+        "DistMax": float(dist_max),
+        "DistMin": float(dist_min),
+        "LcMax": float(lc_max),
+        "LcMin": float(lc_min)
+    }
 
 
 def arrange_parts(p_part_one, p_part_two, p_situation):
@@ -178,51 +208,90 @@ def plot_shapefile(p_dataframe):
     plt.show()
 
 
-def shapefile_to_geo(p_dataframe):
-    buffer = ""
-    point_counter = 1
-    line_counter = 1
-    last_point = 1
+def shapefile_to_geo(p_dataframe, p_mesh_params):
+
+    gmsh.initialize()
+    gmsh.model.add("my_mesh")
+    coastline_index = list(p_dataframe.types).index("coastline")
+    coastline = []
+    counter = 0
+    curve_loops = []
     for shape in p_dataframe.geometry:
+        shape_points = []
         for point in list(shape.coords):
-            buffer += "Point({}) = {{{}, {}, 0, 1.0}};\n".format(point_counter, point[0], point[1])
-            point_counter += 1
-        buffer += "Line({}) = {{{}: {}, {}}};\n".format(line_counter, last_point, point_counter-1, last_point)
-        last_point = point_counter
-        line_counter += 1
-        buffer += "Line Loop({}) = {{{}}};\n".format(line_counter, line_counter-1)
-        line_counter += 1
-    buffer += "Plane Surface({}) = {{2".format(line_counter)
-    for i in range(4, line_counter, 2):
-        buffer += ", {}".format(i)
-    buffer += "};\n"
-    buffer += "Mesh.CharacteristicLengthExtendFromBoundary = 0;\nMesh.Algorithm = 6;\n"
-    geo_file = open("./sample.geo", "w")
-    geo_file.write(buffer)
-    geo_file.close()
-    return buffer
+            shape_points.append(gmsh.model.geo.addPoint(point[0], point[1], 0))
+        shape_lines = []
+        for index in range(len(shape_points)):
+            if index == len(shape_points)-1:
+                shape_lines.append(gmsh.model.geo.addLine(shape_points[index], shape_points[0]))
+            else:
+                shape_lines.append(gmsh.model.geo.addLine(shape_points[index], shape_points[index+1]))
+        curve_loops.append(gmsh.model.geo.addCurveLoop(shape_lines))
+        if counter == coastline_index:
+            coastline = shape_points
+        counter += 1
+    gmsh.model.geo.addPlaneSurface(curve_loops)
+    gmsh.model.geo.synchronize()
+
+    coastline_len = len(coastline)
+
+    gmsh.model.mesh.field.add("Attractor", 1)
+    gmsh.model.mesh.field.setNumbers(1, "NodesList", coastline[coastline_len//100:
+                                                               coastline_len - p_mesh_params["extra_points"] -
+                                                               coastline_len//100])
+    gmsh.model.mesh.field.add("Threshold", 2)
+    gmsh.model.mesh.field.setNumber(2, "IField", 1)
+    gmsh.model.mesh.field.setNumber(2, "DistMax", p_mesh_params["DistMax"])
+    gmsh.model.mesh.field.setNumber(2, "DistMin", p_mesh_params["DistMin"])
+    gmsh.model.mesh.field.setNumber(2, "LcMax", p_mesh_params["LcMax"])
+    gmsh.model.mesh.field.setNumber(2, "LcMin", p_mesh_params["LcMin"])
+    gmsh.model.mesh.field.setAsBackgroundMesh(2)
+    gmsh.write("./msh/temp.geo_unrolled")
+    gmsh.model.mesh.generate(2)
+    gmsh.write("./msh/temp.msh")
+    gmsh.finalize()
+    return
 
 
 if __name__ == "__main__":
     args = create_parser()
     input_shapefile = args.input_shapefile
-    dominion_file = args.output_shapefile
+    dominion_file = args.output_directory + "/result_shapefile.shp"
 
+    # Dominion creation
     is_fine = "N"
     while is_fine.lower() != "y":
         try:
-            dominion_data_frame = close_dominion(input_shapefile, args.bbox, args.threshold, args.sea_points,
-                                                 float(args.smoothing_degree))
-            shapefile_to_geo(dominion_data_frame)
-            quit()
+            dominion_data_frame, extra_points = close_dominion(input_shapefile, args.bbox, args.threshold,
+                                                               args.sea_points, float(args.smoothing_degree))
             plot_shapefile(dominion_data_frame)
             is_fine = input("\nIs this fine? Y or N ")
+            # is_fine = "y"
         except SmoothingError:
             pass
         if is_fine.lower() != "y":
-            args = prompt_for_data(args)
+            args = prompt_for_boundary_data(args)
+
+    # Mesh creation
+    is_fine_mesh = "N"
+    mesh_params = prompt_for_mesh_data()
+    mesh_params["extra_points"] = extra_points
+    while is_fine_mesh.lower() != "y":
+        shapefile_to_geo(dominion_data_frame, mesh_params)
+
+        gmsh.initialize()
+        gmsh.open("./msh/temp.msh")
+        gmsh.fltk.run()
+        gmsh.finalize()
+        # is_fine_mesh = "y"
+        is_fine_mesh = input("\nIs this fine? Y or N ")
+        if is_fine_mesh.lower() != "y":
+            mesh_params = prompt_for_mesh_data()
+            mesh_params["extra_points"] = extra_points
 
     try:
         dominion_data_frame.to_file(dominion_file)
     except ValueError:
         print("Check your bbox, it seems the coastline is not there.")
+
+    os.replace("./msh/temp.msh", args.output_directory+"/result_mesh.msh")
