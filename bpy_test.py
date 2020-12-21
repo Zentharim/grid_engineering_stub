@@ -140,14 +140,14 @@ def prompt_for_boundary_data(p_args):
 
 
 def prompt_for_mesh_data():
-    dist_max = input("\nInsert DistMax: ")
-    dist_min = input("\nInsert DistMin: ")
-    lc_max = input("\nInsert LcMax: ")
-    lc_min = input("\nInsert LcMin: ")
-    # dist_max = 0.1
-    # dist_min = 0.05
-    # lc_max = 0.03
-    # lc_min = 0.005
+    # dist_max = input("\nInsert DistMax: ")
+    # dist_min = input("\nInsert DistMin: ")
+    # lc_max = input("\nInsert LcMax: ")
+    # lc_min = input("\nInsert LcMin: ")
+    dist_max = 0.1
+    dist_min = 0.05
+    lc_max = 0.03
+    lc_min = 0.005
     return {
         "DistMax": float(dist_max),
         "DistMin": float(dist_min),
@@ -231,6 +231,8 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
             coastline = shape_points
         counter += 1
     gmsh.model.geo.addPlaneSurface(curve_loops)
+    gmsh.option.setNumber("Mesh.Algorithm", 6)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 0)
     gmsh.model.geo.synchronize()
 
     coastline_len = len(coastline)
@@ -246,11 +248,80 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
     gmsh.model.mesh.field.setNumber(2, "LcMax", p_mesh_params["LcMax"])
     gmsh.model.mesh.field.setNumber(2, "LcMin", p_mesh_params["LcMin"])
     gmsh.model.mesh.field.setAsBackgroundMesh(2)
+    gmsh.option.setNumber("Mesh.Algorithm", 6)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 0)
     gmsh.write("./msh/temp.geo_unrolled")
     gmsh.model.mesh.generate(2)
+    gmsh.option.setNumber("Mesh.MshFileVersion", 2.10)
     gmsh.write("./msh/temp.msh")
     gmsh.finalize()
     return
+
+
+def msh_to_ww3(file):
+    buffer = ""
+    state = 0
+    count = 0
+    with open(file, "r") as a_file:
+        for line in a_file:
+            if state == 0:
+                buffer += line
+                if "$Elements" in line:
+                    state = 1
+                    continue
+            if state == 1:
+                buffer += "{}\n"
+                state = 2
+                continue
+            if state == 2:
+                parts = line.split()
+                if len(parts) == 1:
+                    buffer += line
+                    continue
+                if parts[1:5] == ["2", "2", "0", "1"]:
+                    buffer += line
+                    count += 1
+        buffer = buffer.format(count)
+    l_ww3_file = ".".join(file.split(".")[:-1])+"_ww3.msh"
+    with open(l_ww3_file, "w") as file:
+        file.write(buffer)
+    return l_ww3_file
+
+
+def ww3_to_grd(file):
+    buffer = ""
+    state = 0
+    nodes = []
+    elements = []
+    with open(file, "r") as a_file:
+        for line in a_file:
+            if state == 0:
+                buffer += line
+                if "$Nodes" in line:
+                    state = 1
+                    continue
+            if state == 1:
+                if "$Elements" in line:
+                    state = 2
+                    del nodes[0]
+                    del nodes[-1]
+                    continue
+                nodes.append(line.split())
+            if state == 2:
+                if "$EndElements" in line:
+                    del elements[0]
+                    continue
+                parts = line.split()
+                elements.append(line.split())
+    l_grd_file = "_".join(file.split("_")[:-1]) + ".grd"
+    with open(l_grd_file, "w") as file:
+        for node in nodes:
+            file.write("1 {} 0 {} {}\n".format(node[0], node[1], node[2]))
+        file.write("\n")
+        for element in elements:
+            file.write("2 {} 0 3 {} {} {}\n".format(element[0], element[5], element[6], element[7]))
+        file.write("\n")
+    return l_grd_file
 
 
 if __name__ == "__main__":
@@ -265,8 +336,8 @@ if __name__ == "__main__":
             dominion_data_frame, extra_points = close_dominion(input_shapefile, args.bbox, args.threshold,
                                                                args.sea_points, float(args.smoothing_degree))
             plot_shapefile(dominion_data_frame)
-            is_fine = input("\nIs this fine? Y or N ")
-            # is_fine = "y"
+            # is_fine = input("\nIs this fine? Y or N ")
+            is_fine = "y"
         except SmoothingError:
             pass
         if is_fine.lower() != "y":
@@ -283,8 +354,8 @@ if __name__ == "__main__":
         gmsh.open("./msh/temp.msh")
         gmsh.fltk.run()
         gmsh.finalize()
-        # is_fine_mesh = "y"
-        is_fine_mesh = input("\nIs this fine? Y or N ")
+        is_fine_mesh = "y"
+        # is_fine_mesh = input("\nIs this fine? Y or N ")
         if is_fine_mesh.lower() != "y":
             mesh_params = prompt_for_mesh_data()
             mesh_params["extra_points"] = extra_points
@@ -294,4 +365,7 @@ if __name__ == "__main__":
     except ValueError:
         print("Check your bbox, it seems the coastline is not there.")
 
-    os.replace("./msh/temp.msh", args.output_directory+"/result_mesh.msh")
+    msh_result = args.output_directory+"/result_mesh.msh"
+    os.replace("./msh/temp.msh", msh_result)
+    ww3_file = msh_to_ww3(msh_result)
+    grd_file = ww3_to_grd(ww3_file)
