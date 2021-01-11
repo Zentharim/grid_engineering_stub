@@ -238,9 +238,8 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
     coastline_len = len(coastline)
 
     gmsh.model.mesh.field.add("Attractor", 1)
-    gmsh.model.mesh.field.setNumbers(1, "NodesList", coastline[coastline_len//100:
-                                                               coastline_len - p_mesh_params["extra_points"] -
-                                                               coastline_len//100])
+    gmsh.model.mesh.field.setNumbers(1, "NodesList", coastline[100:
+                                                               coastline_len - p_mesh_params["extra_points"] - 100])
     gmsh.model.mesh.field.add("Threshold", 2)
     gmsh.model.mesh.field.setNumber(2, "IField", 1)
     gmsh.model.mesh.field.setNumber(2, "DistMax", p_mesh_params["DistMax"])
@@ -248,14 +247,25 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
     gmsh.model.mesh.field.setNumber(2, "LcMax", p_mesh_params["LcMax"])
     gmsh.model.mesh.field.setNumber(2, "LcMin", p_mesh_params["LcMin"])
     gmsh.model.mesh.field.setAsBackgroundMesh(2)
-    gmsh.option.setNumber("Mesh.Algorithm", 6)
-    gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 0)
     gmsh.write("./msh/temp.geo_unrolled")
-    gmsh.model.mesh.generate(2)
-    gmsh.option.setNumber("Mesh.MshFileVersion", 2.10)
-    gmsh.write("./msh/temp.msh")
+    generate_mesh("./msh/temp.geo_unrolled")
     gmsh.finalize()
     return
+
+
+def generate_mesh(file=None):
+    if file is None:
+        gmsh.option.setNumber("Mesh.Algorithm", 6)
+        gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 0)
+        gmsh.model.mesh.generate(2)
+        gmsh.option.setNumber("Mesh.MshFileVersion", 2.10)
+        gmsh.write("./msh/temp.msh")
+    else:
+        fp = open(file, "a")
+        fp.write("Mesh.Algorithm=6;\n")
+        fp.write("Mesh.CharacteristicLengthExtendFromBoundary=0;\n")
+        fp.close()
+        os.system("gmsh-win\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
 
 
 def msh_to_ww3(file):
