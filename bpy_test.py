@@ -5,6 +5,12 @@ import argparse
 from matplotlib import pyplot as plt
 import gmsh
 import os
+import time
+import fileinput
+import sys
+
+# TODO: gestire due coste contemporaneamente
+# TODO: distanza da boundary
 
 
 class SmoothingError(Exception):
