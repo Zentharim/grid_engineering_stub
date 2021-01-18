@@ -216,62 +216,89 @@ def plot_shapefile(p_dataframe):
 
 def shapefile_to_geo(p_dataframe, p_mesh_params):
 
-    gmsh.initialize()
-    gmsh.model.add("my_mesh")
+    fp = open("./msh/temp.geo_unrolled", "w")
+
     coastline_index = list(p_dataframe.types).index("coastline")
-    coastline = []
     counter = 0
+    point_counter = 1
+    start_point = 1
+    line_counter = 1
+    line_loop_counter = 1
+    start_coastline = 0
+    end_coastline = 0
     curve_loops = []
+
     for shape in p_dataframe.geometry:
         shape_points = []
         for point in list(shape.coords):
-            shape_points.append(gmsh.model.geo.addPoint(point[0], point[1], 0))
+            fp.write("Point({}) = {{{}, {}, 0}};\n".format(point_counter, point[0], point[1]))
+            shape_points.append(point_counter)
+            point_counter += 1
+        end_point = point_counter - 1
         shape_lines = []
         for index in range(len(shape_points)):
-            if index == len(shape_points)-1:
-                shape_lines.append(gmsh.model.geo.addLine(shape_points[index], shape_points[0]))
+            if counter == coastline_index:
+                if index == len(shape_points) - 1 - p_mesh_params["extra_points"]:
+                    fp.write("Line({}) = {{{}:{}}};\n".format(line_counter, shape_points[index], shape_points[-1]))
+                    shape_lines.append(line_counter)
+                    line_counter += 1
+                    fp.write("Line({}) = {{{},{}}};\n".format(line_counter, shape_points[-1], shape_points[0]))
+                    shape_lines.append(line_counter)
+                    line_counter += 1
+                    break
+                else:
+                    fp.write("Line({}) = {{{},{}}};\n".format(line_counter, shape_points[index], shape_points[index + 1]))
+                    shape_lines.append(line_counter)
+                    line_counter += 1
             else:
-                shape_lines.append(gmsh.model.geo.addLine(shape_points[index], shape_points[index+1]))
-        curve_loops.append(gmsh.model.geo.addCurveLoop(shape_lines))
+                if index == len(shape_points) - 1:
+                    fp.write("Line({}) = {{{},{}}};\n".format(line_counter, shape_points[index], shape_points[0]))
+                    shape_lines.append(line_counter)
+                    line_counter += 1
+                else:
+                    fp.write("Line({}) = {{{},{}}};\n".format(line_counter, shape_points[index], shape_points[index+1]))
+                    shape_lines.append(line_counter)
+                    line_counter += 1
+
+        loop_buffer = "Line Loop({}) = {{".format(line_loop_counter)
+        curve_loops.append(line_loop_counter)
+        line_loop_counter += 1
+        for element in shape_lines:
+            loop_buffer += "{}, ".format(element)
+        loop_buffer = loop_buffer[:-2]+"};\n"
+        fp.write(loop_buffer)
         if counter == coastline_index:
-            coastline = shape_points
+            end_coastline = end_point
+            start_coastline = start_point
+        start_point = point_counter
         counter += 1
-    gmsh.model.geo.addPlaneSurface(curve_loops)
-    gmsh.option.setNumber("Mesh.Algorithm", 6)
-    gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 0)
-    gmsh.model.geo.synchronize()
 
-    coastline_len = len(coastline)
+    plane_buffer = "Plane Surface(1) = {"
+    for element in curve_loops:
+        plane_buffer += "{}, ".format(element)
+    plane_buffer = plane_buffer[:-2] + "};\n"
+    fp.write(plane_buffer)
 
-    gmsh.model.mesh.field.add("Attractor", 1)
-    gmsh.model.mesh.field.setNumbers(1, "NodesList", coastline[100:
-                                                               coastline_len - p_mesh_params["extra_points"] - 100])
-    gmsh.model.mesh.field.add("Threshold", 2)
-    gmsh.model.mesh.field.setNumber(2, "IField", 1)
-    gmsh.model.mesh.field.setNumber(2, "DistMax", p_mesh_params["DistMax"])
-    gmsh.model.mesh.field.setNumber(2, "DistMin", p_mesh_params["DistMin"])
-    gmsh.model.mesh.field.setNumber(2, "LcMax", p_mesh_params["LcMax"])
-    gmsh.model.mesh.field.setNumber(2, "LcMin", p_mesh_params["LcMin"])
-    gmsh.model.mesh.field.setAsBackgroundMesh(2)
-    gmsh.write("./msh/temp.geo_unrolled")
+    fp.write("Field[1] = Attractor;\n")
+    fp.write("forceParametrizablePatches = 1;\n")
+    fp.write("Field[1].NodesList = {{{}:{}}};\n".format(start_coastline + 50, end_coastline - p_mesh_params["extra_points"] - 50))
+    fp.write("Field[2] = Threshold;\n")
+    fp.write("Field[2].IField = 1;\n")
+    fp.write("Field[2].DistMax = {};\n".format(p_mesh_params["DistMax"]))
+    fp.write("Field[2].DistMin = {};\n".format(p_mesh_params["DistMin"]))
+    fp.write("Field[2].LcMax = {};\n".format(p_mesh_params["LcMax"]))
+    fp.write("Field[2].LcMin = {};\n".format(p_mesh_params["LcMin"]))
+    fp.write("Background Field = 2;\n")
+    fp.write("Mesh.Algorithm = 5;\n")
+    fp.write("Mesh.CharacteristicLengthExtendFromBoundary = 0;\n")
+    fp.close()
+
     generate_mesh("./msh/temp.geo_unrolled")
-    gmsh.finalize()
     return
 
 
 def generate_mesh(file=None):
-    if file is None:
-        gmsh.option.setNumber("Mesh.Algorithm", 6)
-        gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 0)
-        gmsh.model.mesh.generate(2)
-        gmsh.option.setNumber("Mesh.MshFileVersion", 2.10)
-        gmsh.write("./msh/temp.msh")
-    else:
-        fp = open(file, "a")
-        fp.write("Mesh.Algorithm=6;\n")
-        fp.write("Mesh.CharacteristicLengthExtendFromBoundary=0;\n")
-        fp.close()
-        os.system("gmsh-win\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
+    os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
 
 
 def msh_to_ww3(file):
