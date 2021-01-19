@@ -304,9 +304,6 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
     fp.write("Field[1] = Attractor;\n")
     fp.write("forceParametrizablePatches = 1;\n")
     fp.write("Field[1].NodesList = {{{}:{}}};\n".format(first_attractor, last_attractor))
-    print(first_attractor, last_attractor)
-
-    # fp.write("Field[1].NodesList = {{{}:{}}};\n".format(start_coastline, end_coastline - p_mesh_params["extra_points"]-1))
     fp.write("Field[2] = Threshold;\n")
     fp.write("Field[2].IField = 1;\n")
     fp.write("Field[2].DistMax = {};\n".format(p_mesh_params["DistMax"]))
