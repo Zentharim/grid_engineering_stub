@@ -1,13 +1,10 @@
 import geopandas
 from geopy.distance import geodesic as dist
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Polygon
 import argparse
 from matplotlib import pyplot as plt
 import gmsh
 import os
-import time
-import fileinput
-import sys
 
 # TODO: gestire due coste contemporaneamente
 # TODO: distanza da boundary
@@ -67,9 +64,22 @@ def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoot
     file = p_input_shapefile
 
     if p_bbox:
-        data_frame = geopandas.read_file(file, bbox=[float(coord) for coord in p_bbox])
+        p_bbox = [float(coord) for coord in p_bbox]
+        data_frame = geopandas.read_file(file, bbox=p_bbox)
     else:
         data_frame = geopandas.read_file(file)
+
+    if isinstance(data_frame.geometry[0], Polygon):
+        # Create a polygon from the bounding box
+        lons_poly = [p_bbox[0], p_bbox[2], p_bbox[2], p_bbox[0]]
+        lats_poly = [p_bbox[1], p_bbox[1], p_bbox[3], p_bbox[3]]
+        polygon_geom = Polygon(zip(lons_poly, lats_poly))
+        polygon = geopandas.GeoDataFrame(index=[0], geometry=[polygon_geom])
+        intersected_dataframe = geopandas.overlay(data_frame, polygon).boundary
+        polygon_boundary = polygon.boundary
+        polygon_boundary = geopandas.GeoDataFrame(index=[0], geometry=polygon_boundary.geometry)
+        intersected_dataframe = geopandas.GeoDataFrame(index=[0], geometry=intersected_dataframe.geometry)
+        data_frame = geopandas.overlay(intersected_dataframe, polygon_boundary, "difference")
 
     # Merging parts of shapefile
     matrix = [list(part.coords) for part in data_frame.geometry]
@@ -227,11 +237,13 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
     start_coastline = 0
     end_coastline = 0
     curve_loops = []
+    points = []
 
     for shape in p_dataframe.geometry:
         shape_points = []
         for point in list(shape.coords):
             fp.write("Point({}) = {{{}, {}, 0}};\n".format(point_counter, point[0], point[1]))
+            points.append(point)
             shape_points.append(point_counter)
             point_counter += 1
         end_point = point_counter - 1
@@ -279,9 +291,22 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
     plane_buffer = plane_buffer[:-2] + "};\n"
     fp.write(plane_buffer)
 
+    first_attractor = None
+    last_attractor = None
+    print("start {} end {}".format(start_coastline-1, end_coastline-p_mesh_params["extra_points"]-1))
+    for index, point in enumerate(points[start_coastline-1:end_coastline-p_mesh_params["extra_points"]]):
+        print("from start: {} from end {}".format(dist(points[start_coastline-1], point).km, dist(points[end_coastline-p_mesh_params["extra_points"]-1], point).km))
+        if first_attractor is None and dist(points[start_coastline-1], point).km >= p_mesh_params["DistMax"]*100:
+            first_attractor = start_coastline-1+index
+        if first_attractor is not None and last_attractor is None and dist(points[end_coastline-p_mesh_params["extra_points"]-2], point).km <= p_mesh_params["DistMax"]*100:
+            last_attractor = start_coastline - 1 + index
+            break
     fp.write("Field[1] = Attractor;\n")
     fp.write("forceParametrizablePatches = 1;\n")
-    fp.write("Field[1].NodesList = {{{}:{}}};\n".format(start_coastline + 50, end_coastline - p_mesh_params["extra_points"] - 50))
+    fp.write("Field[1].NodesList = {{{}:{}}};\n".format(first_attractor, last_attractor))
+    print(first_attractor, last_attractor)
+
+    # fp.write("Field[1].NodesList = {{{}:{}}};\n".format(start_coastline, end_coastline - p_mesh_params["extra_points"]-1))
     fp.write("Field[2] = Threshold;\n")
     fp.write("Field[2].IField = 1;\n")
     fp.write("Field[2].DistMax = {};\n".format(p_mesh_params["DistMax"]))
@@ -290,7 +315,7 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
     fp.write("Field[2].LcMin = {};\n".format(p_mesh_params["LcMin"]))
     fp.write("Background Field = 2;\n")
     fp.write("Mesh.Algorithm = 5;\n")
-    fp.write("Mesh.CharacteristicLengthExtendFromBoundary = 0;\n")
+    fp.write("Mesh.CharacteristicLengthExtendFromBoundary = 0.5;\n")
     fp.close()
 
     generate_mesh("./msh/temp.geo_unrolled")
