@@ -60,6 +60,38 @@ def remove_doubles(p_list, p_threshold=0.001):
     return p_list
 
 
+def polygons_to_linetring(p_data_frame, p_bbox):
+    # Create a polygon from the bounding box
+    lons_poly = [p_bbox[0], p_bbox[2], p_bbox[2], p_bbox[0]]
+    lats_poly = [p_bbox[1], p_bbox[1], p_bbox[3], p_bbox[3]]
+    polygon_geom = Polygon(zip(lons_poly, lats_poly))
+    polygon = geopandas.GeoDataFrame(index=[0], geometry=[polygon_geom])
+    # Intersect bounding box polygon with dataframe polygon and extract the boundary
+    intersected_dataframe = geopandas.overlay(p_data_frame, polygon).boundary
+    polygon_boundary = polygon.boundary
+    polygon_boundary = geopandas.GeoDataFrame(index=[0], geometry=polygon_boundary.geometry)
+    # The difference between interected polygon boundary and bounding box polygon boundary gives us the coastline
+    intersected_dataframe = geopandas.GeoDataFrame(index=[0], geometry=intersected_dataframe.geometry)
+    return geopandas.overlay(intersected_dataframe, polygon_boundary, "difference")
+
+
+def create_closure(p_coastline, p_sea_points, p_smoothing_degree):
+    start_coast = p_coastline[0]
+    end_coast = p_coastline[-1]
+
+    dominion_closure = [end_coast]
+    distances_from_end = [dist(end_coast, sea_point).km for sea_point in p_sea_points]
+    copy_of_distances = distances_from_end.copy()
+    while copy_of_distances:
+        dominion_closure.append(p_sea_points[distances_from_end.index(min(copy_of_distances))])
+        copy_of_distances.remove(min(copy_of_distances))
+    dominion_closure.append(start_coast)
+    dominion_closure = smooth_corners(LineString(dominion_closure), p_smoothing_degree)
+    if not dominion_closure:
+        raise SmoothingError
+    return dominion_closure
+
+
 def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoothing_degree):
     file = p_input_shapefile
 
@@ -70,16 +102,7 @@ def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoot
         data_frame = geopandas.read_file(file)
 
     if isinstance(data_frame.geometry[0], Polygon):
-        # Create a polygon from the bounding box
-        lons_poly = [p_bbox[0], p_bbox[2], p_bbox[2], p_bbox[0]]
-        lats_poly = [p_bbox[1], p_bbox[1], p_bbox[3], p_bbox[3]]
-        polygon_geom = Polygon(zip(lons_poly, lats_poly))
-        polygon = geopandas.GeoDataFrame(index=[0], geometry=[polygon_geom])
-        intersected_dataframe = geopandas.overlay(data_frame, polygon).boundary
-        polygon_boundary = polygon.boundary
-        polygon_boundary = geopandas.GeoDataFrame(index=[0], geometry=polygon_boundary.geometry)
-        intersected_dataframe = geopandas.GeoDataFrame(index=[0], geometry=intersected_dataframe.geometry)
-        data_frame = geopandas.overlay(intersected_dataframe, polygon_boundary, "difference")
+        data_frame = polygons_to_linetring(data_frame, p_bbox)
 
     # Merging parts of shapefile
     matrix = [list(part.coords) for part in data_frame.geometry]
@@ -102,24 +125,11 @@ def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoot
     matrix = [list(part.coords) for part in new_data_frame.geometry]
 
     coastline = matrix[index_of_coastline]
-    start_coast = coastline[0]
-    end_coast = coastline[-1]
-
-    dominion_closure = [end_coast]
-    distances_from_end = [dist(end_coast, sea_point).km for sea_point in sea_points]
-    copy_of_distances = distances_from_end.copy()
-    while copy_of_distances:
-        dominion_closure.append(sea_points[distances_from_end.index(min(copy_of_distances))])
-        copy_of_distances.remove(min(copy_of_distances))
-    dominion_closure.append(start_coast)
-    dominion_closure = smooth_corners(LineString(dominion_closure), p_smoothing_degree)
-    if not dominion_closure:
-        raise SmoothingError
+    dominion_closure = create_closure(coastline, sea_points, p_smoothing_degree)
     coastline[-1:-1] = dominion_closure
     coastline[-1] = coastline[0]
     for index, line in enumerate(matrix):
         matrix[index] = remove_doubles(matrix[index])
-    # matrix[index_of_coastline] = remove_doubles(coastline)
     linestrings = [LineString(line) for line in matrix]
     types = ["island"]*len(matrix)
     types[index_of_coastline] = "coastline"
@@ -224,6 +234,105 @@ def plot_shapefile(p_dataframe):
     plt.show()
 
 
+def points_to_geo(p_file_pointer, p_shape, p_point_counter, p_points):
+    shape_points = []
+    for point in list(p_shape.coords):
+        p_file_pointer.write("Point({}) = {{{}, {}, 0}};\n".format(p_point_counter, point[0], point[1]))
+        p_points.append(point)
+        shape_points.append(p_point_counter)
+        p_point_counter += 1
+    end_point = p_point_counter - 1
+    return shape_points, p_points, p_point_counter, end_point
+
+
+def lines_to_geo(p_file_pointer, p_shape_points, p_line_counter, p_counter, p_coastline_index, p_extra_points):
+    shape_lines = []
+    for index in range(len(p_shape_points)):
+        if p_counter == p_coastline_index:
+            if index == len(p_shape_points) - 1 - p_extra_points:
+                p_file_pointer.write("Line({}) = {{{}:{}}};\n".format(p_line_counter,
+                                                                      p_shape_points[index],
+                                                                      p_shape_points[-1]))
+                shape_lines.append(p_line_counter)
+                p_line_counter += 1
+                p_file_pointer.write("Line({}) = {{{},{}}};\n".format(p_line_counter,
+                                                                      p_shape_points[-1],
+                                                                      p_shape_points[0]))
+                shape_lines.append(p_line_counter)
+                p_line_counter += 1
+                break
+            else:
+                p_file_pointer.write("Line({}) = {{{},{}}};\n".format(p_line_counter,
+                                                                      p_shape_points[index],
+                                                                      p_shape_points[index + 1]))
+                shape_lines.append(p_line_counter)
+                p_line_counter += 1
+        else:
+            if index == len(p_shape_points) - 1:
+                p_file_pointer.write("Line({}) = {{{},{}}};\n".format(p_line_counter,
+                                                                      p_shape_points[index],
+                                                                      p_shape_points[0]))
+                shape_lines.append(p_line_counter)
+                p_line_counter += 1
+            else:
+                p_file_pointer.write("Line({}) = {{{},{}}};\n".format(p_line_counter,
+                                                                      p_shape_points[index],
+                                                                      p_shape_points[index + 1]))
+                shape_lines.append(p_line_counter)
+                p_line_counter += 1
+    return shape_lines, p_line_counter
+
+
+def line_loops_to_geo(p_file_pointer, p_line_loop_counter, p_curve_loops, p_shape_lines):
+    loop_buffer = "Line Loop({}) = {{".format(p_line_loop_counter)
+    p_curve_loops.append(p_line_loop_counter)
+    p_line_loop_counter += 1
+    for element in p_shape_lines:
+        loop_buffer += "{}, ".format(element)
+    loop_buffer = loop_buffer[:-2] + "};\n"
+    p_file_pointer.write(loop_buffer)
+    return p_curve_loops, p_line_loop_counter
+
+
+def plane_to_geo(p_file_pointer, p_curve_loops):
+    plane_buffer = "Plane Surface(1) = {"
+    for element in p_curve_loops:
+        plane_buffer += "{}, ".format(element)
+    plane_buffer = plane_buffer[:-2] + "};\n"
+    p_file_pointer.write(plane_buffer)
+    return
+
+
+def find_attractors(p_points, p_start_coastline, p_end_coastline, p_mesh_params):
+    first_attractor = None
+    last_attractor = None
+    for index, point in enumerate(p_points[p_start_coastline - 1:p_end_coastline - p_mesh_params["extra_points"]]):
+        if first_attractor is None and \
+                dist(p_points[p_start_coastline - 1], point).km >= p_mesh_params["DistMax"] * 100:
+            first_attractor = p_start_coastline - 1 + index
+        if first_attractor is not None and last_attractor is None and \
+                dist(p_points[p_end_coastline - p_mesh_params["extra_points"] - 2], point).km <= \
+                p_mesh_params["DistMax"] * 100:
+            last_attractor = p_start_coastline - 1 + index
+            return first_attractor, last_attractor
+
+
+def mesh_params_to_geo(p_file_pointer, p_first_attractor, p_last_attractor, p_mesh_params):
+    p_file_pointer.write("Field[1] = Attractor;\n")
+    p_file_pointer.write("forceParametrizablePatches = 1;\n")
+    p_file_pointer.write("Field[1].NodesList = {{{}:{}}};\n".format(p_first_attractor, p_last_attractor))
+    p_file_pointer.write("Field[2] = Threshold;\n")
+    p_file_pointer.write("Field[2].IField = 1;\n")
+    p_file_pointer.write("Field[2].DistMax = {};\n".format(p_mesh_params["DistMax"]))
+    p_file_pointer.write("Field[2].DistMin = {};\n".format(p_mesh_params["DistMin"]))
+    p_file_pointer.write("Field[2].LcMax = {};\n".format(p_mesh_params["LcMax"]))
+    p_file_pointer.write("Field[2].LcMin = {};\n".format(p_mesh_params["LcMin"]))
+    p_file_pointer.write("Background Field = 2;\n")
+    p_file_pointer.write("Mesh.Algorithm = 5;\n")
+    p_file_pointer.write("Mesh.CharacteristicLengthExtendFromBoundary = 0;\n")
+    return
+
+
 def shapefile_to_geo(p_dataframe, p_mesh_params):
 
     fp = open("./msh/temp.geo_unrolled", "w")
@@ -234,85 +343,27 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
     start_point = 1
     line_counter = 1
     line_loop_counter = 1
-    start_coastline = 0
-    end_coastline = 0
     curve_loops = []
     points = []
 
     for shape in p_dataframe.geometry:
-        shape_points = []
-        for point in list(shape.coords):
-            fp.write("Point({}) = {{{}, {}, 0}};\n".format(point_counter, point[0], point[1]))
-            points.append(point)
-            shape_points.append(point_counter)
-            point_counter += 1
-        end_point = point_counter - 1
-        shape_lines = []
-        for index in range(len(shape_points)):
-            if counter == coastline_index:
-                if index == len(shape_points) - 1 - p_mesh_params["extra_points"]:
-                    fp.write("Line({}) = {{{}:{}}};\n".format(line_counter, shape_points[index], shape_points[-1]))
-                    shape_lines.append(line_counter)
-                    line_counter += 1
-                    fp.write("Line({}) = {{{},{}}};\n".format(line_counter, shape_points[-1], shape_points[0]))
-                    shape_lines.append(line_counter)
-                    line_counter += 1
-                    break
-                else:
-                    fp.write("Line({}) = {{{},{}}};\n".format(line_counter, shape_points[index], shape_points[index + 1]))
-                    shape_lines.append(line_counter)
-                    line_counter += 1
-            else:
-                if index == len(shape_points) - 1:
-                    fp.write("Line({}) = {{{},{}}};\n".format(line_counter, shape_points[index], shape_points[0]))
-                    shape_lines.append(line_counter)
-                    line_counter += 1
-                else:
-                    fp.write("Line({}) = {{{},{}}};\n".format(line_counter, shape_points[index], shape_points[index+1]))
-                    shape_lines.append(line_counter)
-                    line_counter += 1
+        shape_points, points, point_counter, end_point = points_to_geo(fp, shape, point_counter, points)
 
-        loop_buffer = "Line Loop({}) = {{".format(line_loop_counter)
-        curve_loops.append(line_loop_counter)
-        line_loop_counter += 1
-        for element in shape_lines:
-            loop_buffer += "{}, ".format(element)
-        loop_buffer = loop_buffer[:-2]+"};\n"
-        fp.write(loop_buffer)
+        shape_lines, line_counter = lines_to_geo(fp, shape_points,
+                                                 line_counter, counter, coastline_index,
+                                                 p_mesh_params["extra_points"])
+
+        curve_loops, line_loop_counter = line_loops_to_geo(fp, line_loop_counter, curve_loops, shape_lines)
         if counter == coastline_index:
             end_coastline = end_point
             start_coastline = start_point
         start_point = point_counter
         counter += 1
 
-    plane_buffer = "Plane Surface(1) = {"
-    for element in curve_loops:
-        plane_buffer += "{}, ".format(element)
-    plane_buffer = plane_buffer[:-2] + "};\n"
-    fp.write(plane_buffer)
+    plane_to_geo(fp, curve_loops)
 
-    first_attractor = None
-    last_attractor = None
-    print("start {} end {}".format(start_coastline-1, end_coastline-p_mesh_params["extra_points"]-1))
-    for index, point in enumerate(points[start_coastline-1:end_coastline-p_mesh_params["extra_points"]]):
-        print("from start: {} from end {}".format(dist(points[start_coastline-1], point).km, dist(points[end_coastline-p_mesh_params["extra_points"]-1], point).km))
-        if first_attractor is None and dist(points[start_coastline-1], point).km >= p_mesh_params["DistMax"]*100:
-            first_attractor = start_coastline-1+index
-        if first_attractor is not None and last_attractor is None and dist(points[end_coastline-p_mesh_params["extra_points"]-2], point).km <= p_mesh_params["DistMax"]*100:
-            last_attractor = start_coastline - 1 + index
-            break
-    fp.write("Field[1] = Attractor;\n")
-    fp.write("forceParametrizablePatches = 1;\n")
-    fp.write("Field[1].NodesList = {{{}:{}}};\n".format(first_attractor, last_attractor))
-    fp.write("Field[2] = Threshold;\n")
-    fp.write("Field[2].IField = 1;\n")
-    fp.write("Field[2].DistMax = {};\n".format(p_mesh_params["DistMax"]))
-    fp.write("Field[2].DistMin = {};\n".format(p_mesh_params["DistMin"]))
-    fp.write("Field[2].LcMax = {};\n".format(p_mesh_params["LcMax"]))
-    fp.write("Field[2].LcMin = {};\n".format(p_mesh_params["LcMin"]))
-    fp.write("Background Field = 2;\n")
-    fp.write("Mesh.Algorithm = 5;\n")
-    fp.write("Mesh.CharacteristicLengthExtendFromBoundary = 0.5;\n")
+    first_attractor, last_attractor = find_attractors(points, start_coastline, end_coastline, p_mesh_params)
+    mesh_params_to_geo(fp, first_attractor, last_attractor, mesh_params)
     fp.close()
 
     generate_mesh("./msh/temp.geo_unrolled")
