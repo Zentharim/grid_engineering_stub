@@ -7,7 +7,8 @@ import gmsh
 import os
 
 # TODO: gestire due coste contemporaneamente
-# TODO: distanza da boundary
+# TODO: controllo qualitá griglia
+# TODO: Riorganizzare in classi
 
 
 class SmoothingError(Exception):
@@ -46,8 +47,21 @@ def create_parser():
 
 
 def smooth_corners(p_line, p_degree):
+    # plt.figure()
+    # x = [i[0] for i in list(p_line.coords)]
+    # y = [i[1] for i in list(p_line.coords)]
+    # plt.plot(x, y, 'g')
     offset = p_line.parallel_offset(p_degree, "right", join_style=1)
+
+    # x = [i[0] for i in list(offset.coords)]
+    # y = [i[1] for i in list(offset.coords)]
+    # plt.plot(x, y)
     offset2 = offset.parallel_offset(p_degree, "right", join_style=1)
+    # x = [i[0] for i in list(offset2.coords)]
+    # y = [i[1] for i in list(offset2.coords)]
+    # plt.plot(x, y, 'r')
+    # plt.show()
+    # quit()
     return list(offset2.coords)[1:-1]
 
 
@@ -71,7 +85,7 @@ def polygons_to_linetring(p_data_frame, p_bbox):
     polygon_boundary = polygon.boundary
     polygon_boundary = geopandas.GeoDataFrame(index=[0], geometry=polygon_boundary.geometry)
     # The difference between interected polygon boundary and bounding box polygon boundary gives us the coastline
-    intersected_dataframe = geopandas.GeoDataFrame(index=[0], geometry=intersected_dataframe.geometry)
+    intersected_dataframe = geopandas.GeoDataFrame(geometry=intersected_dataframe.geometry)
     return geopandas.overlay(intersected_dataframe, polygon_boundary, "difference")
 
 
@@ -103,9 +117,14 @@ def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoot
 
     if isinstance(data_frame.geometry[0], Polygon):
         data_frame = polygons_to_linetring(data_frame, p_bbox)
-
     # Merging parts of shapefile
-    matrix = [list(part.coords) for part in data_frame.geometry]
+    matrix = []
+    for part in data_frame.geometry:
+        try:
+            for line in part:
+                matrix.append(list(line.coords))
+        except TypeError:
+            matrix.append(list(part.coords))
     matrix = merge_parts(matrix, float(p_threshold))
 
     # Creating dataframe
@@ -165,15 +184,17 @@ def prompt_for_boundary_data(p_args):
     return p_args
 
 
-def prompt_for_mesh_data():
-    # dist_max = input("\nInsert DistMax: ")
-    # dist_min = input("\nInsert DistMin: ")
-    # lc_max = input("\nInsert LcMax: ")
-    # lc_min = input("\nInsert LcMin: ")
-    dist_max = 0.1
-    dist_min = 0.05
-    lc_max = 0.03
-    lc_min = 0.005
+def prompt_for_mesh_data(p_debug=True):
+    if p_debug:
+        dist_max = 0.1
+        dist_min = 0.05
+        lc_max = 0.03
+        lc_min = 0.005
+    else:
+        dist_max = input("\nInsert DistMax: ")
+        dist_min = input("\nInsert DistMin: ")
+        lc_max = input("\nInsert LcMax: ")
+        lc_min = input("\nInsert LcMin: ")
     return {
         "DistMax": float(dist_max),
         "DistMin": float(dist_min),
@@ -371,6 +392,7 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
 
 
 def generate_mesh(file=None):
+    # os.system("gmsh -2 {} -o ./msh/temp.msh".format(file))
     os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
 
 
@@ -441,6 +463,7 @@ def ww3_to_grd(file):
 
 
 if __name__ == "__main__":
+    debug = True
     args = create_parser()
     input_shapefile = args.input_shapefile
     dominion_file = args.output_directory + "/result_shapefile.shp"
@@ -452,8 +475,7 @@ if __name__ == "__main__":
             dominion_data_frame, extra_points = close_dominion(input_shapefile, args.bbox, args.threshold,
                                                                args.sea_points, float(args.smoothing_degree))
             plot_shapefile(dominion_data_frame)
-            # is_fine = input("\nIs this fine? Y or N ")
-            is_fine = "y"
+            is_fine = "y" if debug else input("\nIs this fine? Y or N ")
         except SmoothingError:
             pass
         if is_fine.lower() != "y":
@@ -461,7 +483,7 @@ if __name__ == "__main__":
 
     # Mesh creation
     is_fine_mesh = "N"
-    mesh_params = prompt_for_mesh_data()
+    mesh_params = prompt_for_mesh_data(debug)
     mesh_params["extra_points"] = extra_points
     while is_fine_mesh.lower() != "y":
         shapefile_to_geo(dominion_data_frame, mesh_params)
@@ -470,8 +492,7 @@ if __name__ == "__main__":
         gmsh.open("./msh/temp.msh")
         gmsh.fltk.run()
         gmsh.finalize()
-        is_fine_mesh = "y"
-        # is_fine_mesh = input("\nIs this fine? Y or N ")
+        is_fine_mesh = "y" if debug else input("\nIs this fine? Y or N ")
         if is_fine_mesh.lower() != "y":
             mesh_params = prompt_for_mesh_data()
             mesh_params["extra_points"] = extra_points
