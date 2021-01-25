@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 import gmsh
 import os
 
+# TODO: orientamento coastline sempre uguale per smoothing
 # TODO: gestire due coste contemporaneamente
 # TODO: controllo qualitá griglia
 # TODO: Riorganizzare in classi
@@ -74,7 +75,7 @@ def remove_doubles(p_list, p_threshold=0.001):
     return p_list
 
 
-def polygons_to_linetring(p_data_frame, p_bbox):
+def polygons_to_linestring(p_data_frame, p_bbox):
     # Create a polygon from the bounding box
     lons_poly = [p_bbox[0], p_bbox[2], p_bbox[2], p_bbox[0]]
     lats_poly = [p_bbox[1], p_bbox[1], p_bbox[3], p_bbox[3]]
@@ -116,7 +117,7 @@ def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoot
         data_frame = geopandas.read_file(file)
 
     if isinstance(data_frame.geometry[0], Polygon):
-        data_frame = polygons_to_linetring(data_frame, p_bbox)
+        data_frame = polygons_to_linestring(data_frame, p_bbox)
     # Merging parts of shapefile
     matrix = []
     for part in data_frame.geometry:
@@ -257,8 +258,8 @@ def plot_shapefile(p_dataframe):
 
 def points_to_geo(p_file_pointer, p_shape, p_point_counter, p_points):
     shape_points = []
-    for point in list(p_shape.coords):
-        p_file_pointer.write("Point({}) = {{{}, {}, 0}};\n".format(p_point_counter, point[0], point[1]))
+    for point in list(p_shape.coords)[:-1]:
+        p_file_pointer.write("Point({}) = {{{}, {}, 0, 1.0}};\n".format(p_point_counter, point[0], point[1]))
         p_points.append(point)
         shape_points.append(p_point_counter)
         p_point_counter += 1
@@ -266,41 +267,14 @@ def points_to_geo(p_file_pointer, p_shape, p_point_counter, p_points):
     return shape_points, p_points, p_point_counter, end_point
 
 
-def lines_to_geo(p_file_pointer, p_shape_points, p_line_counter, p_counter, p_coastline_index, p_extra_points):
+def lines_to_geo(p_file_pointer, p_boundaries, p_line_counter):
     shape_lines = []
-    for index in range(len(p_shape_points)):
-        if p_counter == p_coastline_index:
-            if index == len(p_shape_points) - 1 - p_extra_points:
-                p_file_pointer.write("Line({}) = {{{}:{}}};\n".format(p_line_counter,
-                                                                      p_shape_points[index],
-                                                                      p_shape_points[-1]))
-                shape_lines.append(p_line_counter)
-                p_line_counter += 1
-                p_file_pointer.write("Line({}) = {{{},{}}};\n".format(p_line_counter,
-                                                                      p_shape_points[-1],
-                                                                      p_shape_points[0]))
-                shape_lines.append(p_line_counter)
-                p_line_counter += 1
-                break
-            else:
-                p_file_pointer.write("Line({}) = {{{},{}}};\n".format(p_line_counter,
-                                                                      p_shape_points[index],
-                                                                      p_shape_points[index + 1]))
-                shape_lines.append(p_line_counter)
-                p_line_counter += 1
-        else:
-            if index == len(p_shape_points) - 1:
-                p_file_pointer.write("Line({}) = {{{},{}}};\n".format(p_line_counter,
-                                                                      p_shape_points[index],
-                                                                      p_shape_points[0]))
-                shape_lines.append(p_line_counter)
-                p_line_counter += 1
-            else:
-                p_file_pointer.write("Line({}) = {{{},{}}};\n".format(p_line_counter,
-                                                                      p_shape_points[index],
-                                                                      p_shape_points[index + 1]))
-                shape_lines.append(p_line_counter)
-                p_line_counter += 1
+    p_file_pointer.write("Line({}) = {{{}:{}}};\n".format(p_line_counter, p_boundaries[0], p_boundaries[1]))
+    shape_lines.append(p_line_counter)
+    p_line_counter += 1
+    p_file_pointer.write("Line({}) = {{{},{}}};\n".format(p_line_counter, p_boundaries[1], p_boundaries[0]))
+    shape_lines.append(p_line_counter)
+    p_line_counter += 1
     return shape_lines, p_line_counter
 
 
@@ -349,7 +323,7 @@ def mesh_params_to_geo(p_file_pointer, p_first_attractor, p_last_attractor, p_me
     p_file_pointer.write("Field[2].LcMax = {};\n".format(p_mesh_params["LcMax"]))
     p_file_pointer.write("Field[2].LcMin = {};\n".format(p_mesh_params["LcMin"]))
     p_file_pointer.write("Background Field = 2;\n")
-    p_file_pointer.write("Mesh.Algorithm = 5;\n")
+    p_file_pointer.write("Mesh.Algorithm = 6;\n")
     p_file_pointer.write("Mesh.CharacteristicLengthExtendFromBoundary = 0;\n")
     return
 
@@ -370,9 +344,7 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
     for shape in p_dataframe.geometry:
         shape_points, points, point_counter, end_point = points_to_geo(fp, shape, point_counter, points)
 
-        shape_lines, line_counter = lines_to_geo(fp, shape_points,
-                                                 line_counter, counter, coastline_index,
-                                                 p_mesh_params["extra_points"])
+        shape_lines, line_counter = lines_to_geo(fp, [start_point, end_point], line_counter)
 
         curve_loops, line_loop_counter = line_loops_to_geo(fp, line_loop_counter, curve_loops, shape_lines)
         if counter == coastline_index:
@@ -393,7 +365,8 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
 
 def generate_mesh(file=None):
     # os.system("gmsh -2 {} -o ./msh/temp.msh".format(file))
-    os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
+    # os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
+    os.system("gmsh-win\\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
 
 
 def msh_to_ww3(file):
