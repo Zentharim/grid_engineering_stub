@@ -22,47 +22,52 @@ class SmoothingError(Exception):
             super().__init__(default_message)
 
 
-def create_parser():
-    l_parser = argparse.ArgumentParser()
-    # defaults are for Fiumicino for testing reasons. For Qatar:
-    # python bpy_test.py -i "./shp/qatar-line.shp" -s 56.441,25.533 56.525,24.8
-    # or for test with bounding box:
-    # python bpy_test.py -i "./shp/qatar-line.shp" -s 56.441,25.4 56.525,25.000 -b 56.332 25.4 56.525 25.000
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
-    l_parser.add_argument("-i", "--input_shapefile", help="Shapefile to use as input",
+
+def create_parser():
+    l_parser = argparse.ArgumentParser(prefix_chars='@')
+    # defaults are for Fiumicino for testing reasons. For Qatar:
+    # python bpy_test.py @i "./shp/qatar-line.shp" @s 56.441,25.533 56.525,24.8
+    # or for test with bounding box:
+    # python bpy_test.py @i "./shp/qatar-line.shp" @s 56.441,25.4 56.525,25.000 @b 56.332 25.4 56.525 25.000
+    # same with global file:
+    # python bpy_test.py @i "./shp/GSHHS_h_L1.shp" @s 56.441,25.4 56.525,25.000 @b 56.332 25.4 56.525 25.000
+
+    l_parser.add_argument("@i", "@@input_shapefile", help="Shapefile to use as input",
                           default="./shp/fiumicino-line.shp")
-    l_parser.add_argument("-b", "--bbox", nargs="+",
+    l_parser.add_argument("@b", "@@bbox", nargs="+",
                           help="Bounding box for the shapefile. e.g. lon_up_sx lat_up_sx lon_down_dx lat_down_dx")
-    l_parser.add_argument("-s", "--sea_points", nargs="+",
+    l_parser.add_argument("@s", "@@sea_points", nargs="+",
                           help="List of sea points where to close the dominion. e.g. lon1,lat1 lon2,lat2 ...",
                           default=["11.992,41.872", "12.080,41.680"])
-    l_parser.add_argument("-t", "--threshold",
+    l_parser.add_argument("@t", "@@threshold",
                           help="Threshold for the minimum distance to merge shapefile parts and remove double points",
                           default="0.001")
-    l_parser.add_argument("-o", "--output_directory", help="Directory where to save the output",
+    l_parser.add_argument("@o", "@@output_directory", help="Directory where to save the output",
                           default="./output")
-    l_parser.add_argument("-d", "--smoothing_degree", help="Degrees for the smoothing",
+    l_parser.add_argument("@d", "@@smoothing_degree", help="Degrees for the smoothing",
                           default="0.01")
+    l_parser.add_argument("@a", "@@attractors_islands", type=str2bool, nargs='?', const=True, default=False,
+                          help="All islands found will be used as attractors")
+    l_parser.add_argument("@c", "@@distance_coeff", type=int, nargs='?', default=1,
+                          help="Coefficient")
     l_args = l_parser.parse_args()
     return l_args
 
 
 def smooth_corners(p_line, p_degree):
-    # plt.figure()
-    # x = [i[0] for i in list(p_line.coords)]
-    # y = [i[1] for i in list(p_line.coords)]
-    # plt.plot(x, y, 'g')
     offset = p_line.parallel_offset(p_degree, "right", join_style=1)
 
-    # x = [i[0] for i in list(offset.coords)]
-    # y = [i[1] for i in list(offset.coords)]
-    # plt.plot(x, y)
     offset2 = offset.parallel_offset(p_degree, "right", join_style=1)
-    # x = [i[0] for i in list(offset2.coords)]
-    # y = [i[1] for i in list(offset2.coords)]
-    # plt.plot(x, y, 'r')
-    # plt.show()
-    # quit()
     return list(offset2.coords)[1:-1]
 
 
@@ -107,6 +112,36 @@ def create_closure(p_coastline, p_sea_points, p_smoothing_degree):
     return dominion_closure
 
 
+def orient_coastline(p_coastline, p_sea_points):
+    mean_coastline = [
+        (p_coastline[0][0] + p_coastline[-1][0])/2,
+        (p_coastline[0][1] + p_coastline[-1][1])/2
+    ]
+    try:
+        mean_sea_points = [
+            sum(point[0] for point in p_sea_points)/len(p_sea_points),
+            sum(point[1] for point in p_sea_points)/len(p_sea_points)
+        ]
+    except TypeError:
+        mean_sea_points = p_sea_points
+
+    lon_diff = abs(p_coastline[0][0] - p_coastline[-1][0])
+    lat_diff = abs(p_coastline[0][1] - p_coastline[-1][1])
+    if lon_diff <= lat_diff:
+        if mean_sea_points[0] > mean_coastline[0]:
+            # Sea is east with respect to the coastline
+            if p_coastline[0][1] > p_coastline[-1][1]:
+                p_coastline.reverse()
+        else:
+            # Sea is west with respect to the coastline
+            if p_coastline[0][1] < p_coastline[-1][1]:
+                p_coastline.reverse()
+    else:
+        if p_coastline[0][0] > p_coastline[-1][0]:
+            p_coastline.reverse()
+    return
+
+
 def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoothing_degree):
     file = p_input_shapefile
 
@@ -145,6 +180,7 @@ def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoot
     matrix = [list(part.coords) for part in new_data_frame.geometry]
 
     coastline = matrix[index_of_coastline]
+    orient_coastline(coastline, sea_points)
     dominion_closure = create_closure(coastline, sea_points, p_smoothing_degree)
     coastline[-1:-1] = dominion_closure
     coastline[-1] = coastline[0]
@@ -301,21 +337,39 @@ def plane_to_geo(p_file_pointer, p_curve_loops):
 def find_attractors(p_points, p_start_coastline, p_end_coastline, p_mesh_params):
     first_attractor = None
     last_attractor = None
+    others = []
+    if not (len(p_points) == p_end_coastline and p_start_coastline == 1):
+        if p_start_coastline == 1:
+            others = [(p_end_coastline + 1, len(p_points))]
+        elif p_end_coastline == len(p_points):
+            others = [(1, p_start_coastline - 1)]
+        else:
+            others = [(1, p_start_coastline - 1), (p_end_coastline + 1, len(p_points))]
     for index, point in enumerate(p_points[p_start_coastline - 1:p_end_coastline - p_mesh_params["extra_points"]]):
         if first_attractor is None and \
-                dist(p_points[p_start_coastline - 1], point).km >= p_mesh_params["DistMax"] * 100:
+                dist(p_points[p_start_coastline - 1], point).km >= p_mesh_params["LcMax"] * 100 * \
+                p_mesh_params["distance_coeff"]:
             first_attractor = p_start_coastline - 1 + index
         if first_attractor is not None and last_attractor is None and \
                 dist(p_points[p_end_coastline - p_mesh_params["extra_points"] - 2], point).km <= \
-                p_mesh_params["DistMax"] * 100:
+                p_mesh_params["LcMax"] * 100 * p_mesh_params["distance_coeff"]:
             last_attractor = p_start_coastline - 1 + index
-            return first_attractor, last_attractor
+            return first_attractor, last_attractor, others
 
 
-def mesh_params_to_geo(p_file_pointer, p_first_attractor, p_last_attractor, p_mesh_params):
+def attractors_to_geo(p_first_attractor, p_last_attractor, others):
+    attractors_buffer = "Field[1].NodesList = {"
+    attractors_buffer += "{}:{}, ".format(p_first_attractor, p_last_attractor)
+    for couple in others:
+        attractors_buffer += "{}:{}, ".format(couple[0], couple[1])
+    attractors_buffer = attractors_buffer[:-2] + "};\n"
+    return attractors_buffer
+
+
+def mesh_params_to_geo(p_file_pointer, p_first_attractor, p_last_attractor, others, p_mesh_params):
     p_file_pointer.write("Field[1] = Attractor;\n")
     p_file_pointer.write("forceParametrizablePatches = 1;\n")
-    p_file_pointer.write("Field[1].NodesList = {{{}:{}}};\n".format(p_first_attractor, p_last_attractor))
+    p_file_pointer.write(attractors_to_geo(p_first_attractor, p_last_attractor, others))
     p_file_pointer.write("Field[2] = Threshold;\n")
     p_file_pointer.write("Field[2].IField = 1;\n")
     p_file_pointer.write("Field[2].DistMax = {};\n".format(p_mesh_params["DistMax"]))
@@ -355,8 +409,8 @@ def shapefile_to_geo(p_dataframe, p_mesh_params):
 
     plane_to_geo(fp, curve_loops)
 
-    first_attractor, last_attractor = find_attractors(points, start_coastline, end_coastline, p_mesh_params)
-    mesh_params_to_geo(fp, first_attractor, last_attractor, mesh_params)
+    first_attractor, last_attractor, others = find_attractors(points, start_coastline, end_coastline, p_mesh_params)
+    mesh_params_to_geo(fp, first_attractor, last_attractor, others, mesh_params)
     fp.close()
 
     generate_mesh("./msh/temp.geo_unrolled")
@@ -458,6 +512,8 @@ if __name__ == "__main__":
     is_fine_mesh = "N"
     mesh_params = prompt_for_mesh_data(debug)
     mesh_params["extra_points"] = extra_points
+    mesh_params["islands_attractors"] = args.attractors_islands
+    mesh_params["distance_coeff"] = args.distance_coeff
     while is_fine_mesh.lower() != "y":
         shapefile_to_geo(dominion_data_frame, mesh_params)
 
