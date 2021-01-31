@@ -6,9 +6,9 @@ from matplotlib import pyplot as plt
 import gmsh
 import os
 
-# TODO: orientamento coastline sempre uguale per smoothing
-# TODO: gestire due coste contemporaneamente
 # TODO: controllo qualitá griglia
+# TODO: test orientamento coastline sempre uguale per smoothing
+# TODO: gestire due coste contemporaneamente
 # TODO: Riorganizzare in classi
 
 
@@ -56,7 +56,7 @@ def create_parser():
                           default="./output")
     l_parser.add_argument("@d", "@@smoothing_degree", help="Degrees for the smoothing",
                           default="0.01")
-    l_parser.add_argument("@a", "@@attractors_islands", type=str2bool, nargs='?', const=True, default=False,
+    l_parser.add_argument("@a", "@@attractors_islands", type=str2bool, nargs='?', const=True, default=True,
                           help="All islands found will be used as attractors")
     l_parser.add_argument("@c", "@@distance_coeff", type=int, nargs='?', default=1,
                           help="Coefficient")
