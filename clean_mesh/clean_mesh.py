@@ -5,20 +5,18 @@ import numpy as np
 import os
 
 
+# DONE
 def checkQuads(faces):
     return [f for f in list(faces) if len(f.verts) != 3]
 
 
+# Come dovrebbe funzionare il confronto tra link edges e link faces con l'msh?!
 def wrongConnectivity(vs):
     return [v for v in vs if (len(v.link_edges) - 2) == (len(v.link_faces))]
 
 
 def nestedTri(vs):
     return [v for v in vs if (len(v.link_edges) == 3) and (len(v.link_faces) == 3)]
-
-
-def quads(vs):
-    return [v for v in vs if (len(v.link_edges) == 4) and (len(v.link_faces) == 4)]
 
 
 def vertexArea(vs):
@@ -39,7 +37,7 @@ def badAngles(fs, maxAngle=160):
             (f.verts[2].co - f.verts[1].co).normalized() * (f.verts[0].co - f.verts[1].co).normalized() < threshold or
             (f.verts[0].co - f.verts[2].co).normalized() * (f.verts[1].co - f.verts[2].co).normalized() < threshold]
 
-
+# DONE
 def aloneVerts(vs):
     return [v for v in vs if len(v.link_edges) == 1]
 
@@ -71,7 +69,7 @@ def saveSelection(bm, name):
 def unvalidVerts(vs):
     return [v for v in vs if len(v.link_edges) > 2]
 
-
+# DONE
 def alonePoint(vs):
     return [v for v in vs if len(v.link_edges) == 0]
 
@@ -149,25 +147,25 @@ bm.to_mesh(a.data)
 bpy.ops.object.mode_set(mode='EDIT')
 # -------------------------------
 
-"""SELECT NODES ACCORDING DEPTH"""
-
+# """SELECT NODES ACCORDING DEPTH"""
+#
+# # obj = bpy.context.object
+# # mesh = obj.data
+# # obj.update_from_editmode()
+# # dpt = 7
+# # idx = [i for i in mesh.vertices if i.co.z < (dpt * -bathyCoeff)]
+# # for i in idx:
+# #     i.select = True
+#
+# """SELECT NODES ACCORDING MASK"""
+#
 # obj = bpy.context.object
 # mesh = obj.data
 # obj.update_from_editmode()
-# dpt = 7
-# idx = [i for i in mesh.vertices if i.co.z < (dpt * -bathyCoeff)]
-# for i in idx:
-#     i.select = True
-
-"""SELECT NODES ACCORDING MASK"""
-
-obj = bpy.context.object
-mesh = obj.data
-obj.update_from_editmode()
-msk = np.load('/Users/scausio/Desktop/condivisa_VM/grid_global/pos_landMask_2.npy')
-for i, j in zip(mesh.vertices, msk):
-    if j:
-        i.select = j
+# msk = np.load('/Users/scausio/Desktop/condivisa_VM/grid_global/pos_landMask_2.npy')
+# for i, j in zip(mesh.vertices, msk):
+#     if j:
+#         i.select = j
 
 # ------------------------------- find elements linked to 1 other element if bad angle
 bpy.ops.object.mode_set(mode='OBJECT')

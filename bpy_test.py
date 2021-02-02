@@ -1,25 +1,16 @@
-import geopandas
-from geopy.distance import geodesic as dist
-from shapely.geometry import LineString, Polygon
 import argparse
 from matplotlib import pyplot as plt
 import gmsh
 import os
+from clean_mesh.cleaner import Cleaner
+from file_handler.geo_handler import GeoWriter
+from file_handler.shp_handler import ShpHandler
+from exceptions.exceptions import SmoothingError
 
-# TODO: controllo qualitá griglia
-# TODO: test orientamento coastline sempre uguale per smoothing
-# TODO: gestire due coste contemporaneamente
+# ONGOING: controllo qualitá griglia
+# TODO: attrattori nei punti a distanza lcmax*c sui lati di costa
 # TODO: Riorganizzare in classi
-
-
-class SmoothingError(Exception):
-    def __init__(self, *args, **kwargs):
-        default_message = "The smoothing degree is too high. Retry with a smaller one."
-
-        if args or kwargs:
-            super().__init__(*args, **kwargs)
-        else:
-            super().__init__(default_message)
+# TODO: gestire due coste contemporaneamente
 
 
 def str2bool(v):
@@ -62,134 +53,6 @@ def create_parser():
                           help="Coefficient")
     l_args = l_parser.parse_args()
     return l_args
-
-
-def smooth_corners(p_line, p_degree):
-    offset = p_line.parallel_offset(p_degree, "right", join_style=1)
-
-    offset2 = offset.parallel_offset(p_degree, "right", join_style=1)
-    return list(offset2.coords)[1:-1]
-
-
-def remove_doubles(p_list, p_threshold=0.001):
-    counter = 0
-    while counter < len(p_list)-1:
-        if dist(p_list[counter], p_list[counter+1]).km < p_threshold:
-            del p_list[counter+1]
-        counter += 1
-    return p_list
-
-
-def polygons_to_linestring(p_data_frame, p_bbox):
-    # Create a polygon from the bounding box
-    lons_poly = [p_bbox[0], p_bbox[2], p_bbox[2], p_bbox[0]]
-    lats_poly = [p_bbox[1], p_bbox[1], p_bbox[3], p_bbox[3]]
-    polygon_geom = Polygon(zip(lons_poly, lats_poly))
-    polygon = geopandas.GeoDataFrame(index=[0], geometry=[polygon_geom])
-    # Intersect bounding box polygon with dataframe polygon and extract the boundary
-    intersected_dataframe = geopandas.overlay(p_data_frame, polygon).boundary
-    polygon_boundary = polygon.boundary
-    polygon_boundary = geopandas.GeoDataFrame(index=[0], geometry=polygon_boundary.geometry)
-    # The difference between interected polygon boundary and bounding box polygon boundary gives us the coastline
-    intersected_dataframe = geopandas.GeoDataFrame(geometry=intersected_dataframe.geometry)
-    return geopandas.overlay(intersected_dataframe, polygon_boundary, "difference")
-
-
-def create_closure(p_coastline, p_sea_points, p_smoothing_degree):
-    start_coast = p_coastline[0]
-    end_coast = p_coastline[-1]
-
-    dominion_closure = [end_coast]
-    distances_from_end = [dist(end_coast, sea_point).km for sea_point in p_sea_points]
-    copy_of_distances = distances_from_end.copy()
-    while copy_of_distances:
-        dominion_closure.append(p_sea_points[distances_from_end.index(min(copy_of_distances))])
-        copy_of_distances.remove(min(copy_of_distances))
-    dominion_closure.append(start_coast)
-    dominion_closure = smooth_corners(LineString(dominion_closure), p_smoothing_degree)
-    if not dominion_closure:
-        raise SmoothingError
-    return dominion_closure
-
-
-def orient_coastline(p_coastline, p_sea_points):
-    mean_coastline = [
-        (p_coastline[0][0] + p_coastline[-1][0])/2,
-        (p_coastline[0][1] + p_coastline[-1][1])/2
-    ]
-    try:
-        mean_sea_points = [
-            sum(point[0] for point in p_sea_points)/len(p_sea_points),
-            sum(point[1] for point in p_sea_points)/len(p_sea_points)
-        ]
-    except TypeError:
-        mean_sea_points = p_sea_points
-
-    lon_diff = abs(p_coastline[0][0] - p_coastline[-1][0])
-    lat_diff = abs(p_coastline[0][1] - p_coastline[-1][1])
-    if lon_diff <= lat_diff:
-        if mean_sea_points[0] > mean_coastline[0]:
-            # Sea is east with respect to the coastline
-            if p_coastline[0][1] > p_coastline[-1][1]:
-                p_coastline.reverse()
-        else:
-            # Sea is west with respect to the coastline
-            if p_coastline[0][1] < p_coastline[-1][1]:
-                p_coastline.reverse()
-    else:
-        if p_coastline[0][0] > p_coastline[-1][0]:
-            p_coastline.reverse()
-    return
-
-
-def close_dominion(p_input_shapefile, p_bbox, p_threshold, p_sea_points, p_smoothing_degree):
-    file = p_input_shapefile
-
-    if p_bbox:
-        p_bbox = [float(coord) for coord in p_bbox]
-        data_frame = geopandas.read_file(file, bbox=p_bbox)
-    else:
-        data_frame = geopandas.read_file(file)
-
-    if isinstance(data_frame.geometry[0], Polygon):
-        data_frame = polygons_to_linestring(data_frame, p_bbox)
-    # Merging parts of shapefile
-    matrix = []
-    for part in data_frame.geometry:
-        try:
-            for line in part:
-                matrix.append(list(line.coords))
-        except TypeError:
-            matrix.append(list(part.coords))
-    matrix = merge_parts(matrix, float(p_threshold))
-
-    # Creating dataframe
-    linestrings = [LineString(line) for line in matrix]
-    new_data_frame = geopandas.GeoDataFrame({"geometry": linestrings})
-
-    # Creation of dominion
-    sea_points = []
-
-    for string in p_sea_points:
-        a, b = string.split(",")
-        coords = (float(a), float(b))
-        sea_points.append(coords)
-
-    # ok for 1,2, and 3 point of dominion bbox (no model over islands, we have a coastline)
-    index_of_coastline = [idx for idx, part in enumerate(new_data_frame.geometry) if not part.is_ring][0]
-    matrix = [list(part.coords) for part in new_data_frame.geometry]
-
-    coastline = matrix[index_of_coastline]
-    orient_coastline(coastline, sea_points)
-    dominion_closure = create_closure(coastline, sea_points, p_smoothing_degree)
-    coastline[-1:-1] = dominion_closure
-    coastline[-1] = coastline[0]
-    for index, line in enumerate(matrix):
-        matrix[index] = remove_doubles(matrix[index])
-    linestrings = [LineString(line) for line in matrix]
-    types = ["island"]*len(matrix)
-    types[index_of_coastline] = "coastline"
-    return geopandas.GeoDataFrame({"geometry": linestrings, "types": types}), len(dominion_closure)
 
 
 def prompt_for_boundary_data(p_args):
@@ -240,49 +103,6 @@ def prompt_for_mesh_data(p_debug=True):
     }
 
 
-def arrange_parts(p_part_one, p_part_two, p_situation):
-    results = [
-        p_part_two[::-1] + p_part_one,
-        p_part_two + p_part_one,
-        p_part_one + p_part_two,
-        p_part_one + p_part_two[::-1]
-    ]
-    return results[p_situation]
-
-
-# FUNCTION TO MERGE PARTS OF SHAPEFILE
-def merge_parts(p_matrix, p_threshold=0.001):
-    len_matrix = len(p_matrix)
-    index = 0
-    while index < len(p_matrix):
-        other_index = index + 1
-        while other_index < len(p_matrix):
-            part = p_matrix[index]
-            other_part = p_matrix[other_index]
-
-            distances = [
-                dist(part[0], other_part[0]).km,
-                dist(part[0], other_part[-1]).km,
-                dist(part[-1], other_part[0]).km,
-                dist(part[-1], other_part[-1]).km
-            ]
-
-            if min(distances) < p_threshold:
-                p_matrix[index] = arrange_parts(part, other_part, distances.index(min(distances)))
-            else:
-                other_index += 1
-                continue
-
-            try:
-                del p_matrix[other_index]
-            except IndexError:
-                pass
-        index += 1
-    if len_matrix == len(p_matrix):
-        return p_matrix
-    return merge_parts(p_matrix, p_threshold)
-
-
 def plot_shapefile(p_dataframe):
     plt.figure()
     for shape in [list(part.coords) for part in p_dataframe.geometry]:
@@ -292,164 +112,57 @@ def plot_shapefile(p_dataframe):
     plt.show()
 
 
-def points_to_geo(p_file_pointer, p_shape, p_point_counter, p_points):
-    shape_points = []
-    for point in list(p_shape.coords)[:-1]:
-        p_file_pointer.write("Point({}) = {{{}, {}, 0, 1.0}};\n".format(p_point_counter, point[0], point[1]))
-        p_points.append(point)
-        shape_points.append(p_point_counter)
-        p_point_counter += 1
-    end_point = p_point_counter - 1
-    return shape_points, p_points, p_point_counter, end_point
-
-
-def lines_to_geo(p_file_pointer, p_boundaries, p_line_counter):
-    shape_lines = []
-    p_file_pointer.write("Line({}) = {{{}:{}}};\n".format(p_line_counter, p_boundaries[0], p_boundaries[1]))
-    shape_lines.append(p_line_counter)
-    p_line_counter += 1
-    p_file_pointer.write("Line({}) = {{{},{}}};\n".format(p_line_counter, p_boundaries[1], p_boundaries[0]))
-    shape_lines.append(p_line_counter)
-    p_line_counter += 1
-    return shape_lines, p_line_counter
-
-
-def line_loops_to_geo(p_file_pointer, p_line_loop_counter, p_curve_loops, p_shape_lines):
-    loop_buffer = "Line Loop({}) = {{".format(p_line_loop_counter)
-    p_curve_loops.append(p_line_loop_counter)
-    p_line_loop_counter += 1
-    for element in p_shape_lines:
-        loop_buffer += "{}, ".format(element)
-    loop_buffer = loop_buffer[:-2] + "};\n"
-    p_file_pointer.write(loop_buffer)
-    return p_curve_loops, p_line_loop_counter
-
-
-def plane_to_geo(p_file_pointer, p_curve_loops):
-    plane_buffer = "Plane Surface(1) = {"
-    for element in p_curve_loops:
-        plane_buffer += "{}, ".format(element)
-    plane_buffer = plane_buffer[:-2] + "};\n"
-    p_file_pointer.write(plane_buffer)
-    return
-
-
-def find_attractors(p_points, p_start_coastline, p_end_coastline, p_mesh_params):
-    first_attractor = None
-    last_attractor = None
-    others = []
-    if not (len(p_points) == p_end_coastline and p_start_coastline == 1):
-        if p_start_coastline == 1:
-            others = [(p_end_coastline + 1, len(p_points))]
-        elif p_end_coastline == len(p_points):
-            others = [(1, p_start_coastline - 1)]
-        else:
-            others = [(1, p_start_coastline - 1), (p_end_coastline + 1, len(p_points))]
-    for index, point in enumerate(p_points[p_start_coastline - 1:p_end_coastline - p_mesh_params["extra_points"]]):
-        if first_attractor is None and \
-                dist(p_points[p_start_coastline - 1], point).km >= p_mesh_params["LcMax"] * 100 * \
-                p_mesh_params["distance_coeff"]:
-            first_attractor = p_start_coastline - 1 + index
-        if first_attractor is not None and last_attractor is None and \
-                dist(p_points[p_end_coastline - p_mesh_params["extra_points"] - 2], point).km <= \
-                p_mesh_params["LcMax"] * 100 * p_mesh_params["distance_coeff"]:
-            last_attractor = p_start_coastline - 1 + index
-            return first_attractor, last_attractor, others
-
-
-def attractors_to_geo(p_first_attractor, p_last_attractor, others):
-    attractors_buffer = "Field[1].NodesList = {"
-    attractors_buffer += "{}:{}, ".format(p_first_attractor, p_last_attractor)
-    for couple in others:
-        attractors_buffer += "{}:{}, ".format(couple[0], couple[1])
-    attractors_buffer = attractors_buffer[:-2] + "};\n"
-    return attractors_buffer
-
-
-def mesh_params_to_geo(p_file_pointer, p_first_attractor, p_last_attractor, others, p_mesh_params):
-    p_file_pointer.write("Field[1] = Attractor;\n")
-    p_file_pointer.write("forceParametrizablePatches = 1;\n")
-    p_file_pointer.write(attractors_to_geo(p_first_attractor, p_last_attractor, others))
-    p_file_pointer.write("Field[2] = Threshold;\n")
-    p_file_pointer.write("Field[2].IField = 1;\n")
-    p_file_pointer.write("Field[2].DistMax = {};\n".format(p_mesh_params["DistMax"]))
-    p_file_pointer.write("Field[2].DistMin = {};\n".format(p_mesh_params["DistMin"]))
-    p_file_pointer.write("Field[2].LcMax = {};\n".format(p_mesh_params["LcMax"]))
-    p_file_pointer.write("Field[2].LcMin = {};\n".format(p_mesh_params["LcMin"]))
-    p_file_pointer.write("Background Field = 2;\n")
-    p_file_pointer.write("Mesh.Algorithm = 6;\n")
-    p_file_pointer.write("Mesh.CharacteristicLengthExtendFromBoundary = 0;\n")
-    return
-
-
-def shapefile_to_geo(p_dataframe, p_mesh_params):
-
-    fp = open("./msh/temp.geo_unrolled", "w")
-
-    coastline_index = list(p_dataframe.types).index("coastline")
-    counter = 0
-    point_counter = 1
-    start_point = 1
-    line_counter = 1
-    line_loop_counter = 1
-    curve_loops = []
-    points = []
-
-    for shape in p_dataframe.geometry:
-        shape_points, points, point_counter, end_point = points_to_geo(fp, shape, point_counter, points)
-
-        shape_lines, line_counter = lines_to_geo(fp, [start_point, end_point], line_counter)
-
-        curve_loops, line_loop_counter = line_loops_to_geo(fp, line_loop_counter, curve_loops, shape_lines)
-        if counter == coastline_index:
-            end_coastline = end_point
-            start_coastline = start_point
-        start_point = point_counter
-        counter += 1
-
-    plane_to_geo(fp, curve_loops)
-
-    first_attractor, last_attractor, others = find_attractors(points, start_coastline, end_coastline, p_mesh_params)
-    mesh_params_to_geo(fp, first_attractor, last_attractor, others, mesh_params)
-    fp.close()
-
-    generate_mesh("./msh/temp.geo_unrolled")
-    return
-
-
 def generate_mesh(file=None):
     # os.system("gmsh -2 {} -o ./msh/temp.msh".format(file))
-    # os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
-    os.system("gmsh-win\\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
+    os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
+    # os.system("gmsh-win\\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
 
 
-def msh_to_ww3(file):
-    buffer = ""
+def read_data_from_msh(file):
+    l_vertices = []
+    l_triangles = []
+    l_quads = []
     state = 0
-    count = 0
     with open(file, "r") as a_file:
         for line in a_file:
             if state == 0:
-                buffer += line
-                if "$Elements" in line:
+                if "$Nodes" in line:
                     state = 1
                     continue
             if state == 1:
-                buffer += "{}\n"
                 state = 2
                 continue
             if state == 2:
                 parts = line.split()
                 if len(parts) == 1:
-                    buffer += line
+                    # skipping not data lines
                     continue
-                if parts[1:5] == ["2", "2", "0", "1"]:
-                    buffer += line
-                    count += 1
-        buffer = buffer.format(count)
+                if len(parts) == 4:
+                    # vertices
+                    l_vertices.append([parts[1], parts[2], parts[3]])
+                    continue
+                elif parts[1:5] == ["2", "2", "0", "1"]:
+                    # triangles
+                    l_triangles.append(parts[5:])
+                elif parts[1] == "3" and len(parts) > 4:
+                    # quads
+                    l_quads.append(parts[-4, :])
+
+    return l_vertices, l_triangles, l_quads
+
+
+def msh_to_ww3(file, p_clean_vertices, p_clean_triangles):
     l_ww3_file = ".".join(file.split(".")[:-1])+"_ww3.msh"
     with open(l_ww3_file, "w") as file:
-        file.write(buffer)
+        file.write("$MeshFormat\n2.2 0 8\n$EndMeshFormat\n$Nodes\n")
+        file.write("{}\n".format(len(p_clean_vertices)))
+        for index, vertex in enumerate(p_clean_vertices):
+            file.write("{} {} {} 0\n".format(index+1, vertex[0], vertex[1]))
+        file.write("$EndNodes\n$Elements\n")
+        file.write("{}\n".format(len(p_clean_triangles)))
+        for index, triangle in enumerate(p_clean_triangles):
+            file.write("{} 2 2 0 1 {} {} {}\n".format(index+1, triangle[0], triangle[1], triangle[2]))
+        file.write("$EndElements\n")
     return l_ww3_file
 
 
@@ -499,8 +212,12 @@ if __name__ == "__main__":
     is_fine = "N"
     while is_fine.lower() != "y":
         try:
-            dominion_data_frame, extra_points = close_dominion(input_shapefile, args.bbox, args.threshold,
-                                                               args.sea_points, float(args.smoothing_degree))
+            shp_handler = ShpHandler(input_shapefile, args.bbox)
+            shp_handler.prepare_to_close()
+            dominion_data_frame, extra_points = shp_handler.close_dominion(args.threshold, args.sea_points,
+                                                                           float(args.smoothing_degree))
+            # dominion_data_frame, extra_points = close_dominion(input_shapefile, args.bbox, args.threshold,
+            #                                                    args.sea_points, float(args.smoothing_degree))
             plot_shapefile(dominion_data_frame)
             is_fine = "y" if debug else input("\nIs this fine? Y or N ")
         except SmoothingError:
@@ -514,8 +231,11 @@ if __name__ == "__main__":
     mesh_params["extra_points"] = extra_points
     mesh_params["islands_attractors"] = args.attractors_islands
     mesh_params["distance_coeff"] = args.distance_coeff
+    writer = GeoWriter(dominion_data_frame, mesh_params)
     while is_fine_mesh.lower() != "y":
-        shapefile_to_geo(dominion_data_frame, mesh_params)
+        writer.shapefile_to_geo()
+        # shapefile_to_geo(dominion_data_frame, mesh_params)
+        generate_mesh("./msh/temp.geo_unrolled")
 
         gmsh.initialize()
         gmsh.open("./msh/temp.msh")
@@ -525,6 +245,8 @@ if __name__ == "__main__":
         if is_fine_mesh.lower() != "y":
             mesh_params = prompt_for_mesh_data()
             mesh_params["extra_points"] = extra_points
+            mesh_params["islands_attractors"] = args.attractors_islands
+            mesh_params["distance_coeff"] = args.distance_coeff
 
     try:
         dominion_data_frame.to_file(dominion_file)
@@ -533,5 +255,12 @@ if __name__ == "__main__":
 
     msh_result = args.output_directory+"/result_mesh.msh"
     os.replace("./msh/temp.msh", msh_result)
-    ww3_file = msh_to_ww3(msh_result)
+
+    # Quality checks
+    vertices, triangles, quads = read_data_from_msh(msh_result)
+    cleaner = Cleaner(vertices, triangles, quads)
+    cleaner.clean()
+    clean_vertices, clean_triangles = cleaner.get_data()
+
+    ww3_file = msh_to_ww3(msh_result, clean_vertices, clean_triangles)
     grd_file = ww3_to_grd(ww3_file)
