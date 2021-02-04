@@ -2,6 +2,7 @@ import geopandas
 from shapely.geometry import LineString, Polygon
 from geopy.distance import geodesic as dist
 from exceptions.exceptions import SmoothingError
+from matplotlib import pyplot as plt
 
 
 class ShpHandler:
@@ -10,7 +11,11 @@ class ShpHandler:
         self.bbox = p_bbox
         if self.bbox:
             self.bbox = [float(coord) for coord in self.bbox]
-            self.data_frame = geopandas.read_file(p_shapefile, bbox=self.bbox)
+            if len(self.bbox) == 4:
+                self.data_frame = geopandas.read_file(p_shapefile, bbox=self.bbox)
+            else:
+                self.data_frame = geopandas.read_file(p_shapefile)
+                self.__polygons_to_linestring__()
         else:
             self.data_frame = geopandas.read_file(p_shapefile)
         self.matrix = []
@@ -21,8 +26,12 @@ class ShpHandler:
 
     def __polygons_to_linestring__(self):
         # Create a polygon from the bounding box
-        lons_poly = [self.bbox[0], self.bbox[2], self.bbox[2], self.bbox[0]]
-        lats_poly = [self.bbox[1], self.bbox[1], self.bbox[3], self.bbox[3]]
+        if len(self.bbox) == 4:
+            lons_poly = [self.bbox[0], self.bbox[2], self.bbox[2], self.bbox[0]]
+            lats_poly = [self.bbox[1], self.bbox[1], self.bbox[3], self.bbox[3]]
+        else:
+            lons_poly = [coord for index, coord in enumerate(self.bbox) if index%2 == 0]
+            lats_poly = [coord for index, coord in enumerate(self.bbox) if index%2 == 1]
         polygon_geom = Polygon(zip(lons_poly, lats_poly))
         polygon = geopandas.GeoDataFrame(index=[0], geometry=[polygon_geom])
         # Intersect bounding box polygon with dataframe polygon and extract the boundary
@@ -32,6 +41,8 @@ class ShpHandler:
         # The difference between intersected polygon boundary and bounding box polygon boundary gives us the coastline
         intersected_dataframe = geopandas.GeoDataFrame(geometry=intersected_dataframe.geometry)
         self.data_frame = geopandas.overlay(intersected_dataframe, polygon_boundary, "difference")
+        self.data_frame.plot()
+        plt.show()
         return
 
     def close_dominion(self, p_threshold, p_sea_points, p_smoothing_degree):
