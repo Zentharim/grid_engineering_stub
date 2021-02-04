@@ -41,8 +41,6 @@ class ShpHandler:
         # The difference between intersected polygon boundary and bounding box polygon boundary gives us the coastline
         intersected_dataframe = geopandas.GeoDataFrame(geometry=intersected_dataframe.geometry)
         self.data_frame = geopandas.overlay(intersected_dataframe, polygon_boundary, "difference")
-        self.data_frame.plot()
-        plt.show()
         return
 
     def close_dominion(self, p_threshold, p_sea_points, p_smoothing_degree):
