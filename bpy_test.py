@@ -8,9 +8,8 @@ from file_handler.shp_handler import ShpHandler
 from exceptions.exceptions import SmoothingError
 
 # ONGOING: controllo qualitá griglia
-# TODO: attrattori nei punti a distanza lcmax*c sui lati di costa
-# TODO: Riorganizzare in classi
 # TODO: gestire due coste contemporaneamente
+# TODO: filtro su poligono shapefile
 
 
 def str2bool(v):

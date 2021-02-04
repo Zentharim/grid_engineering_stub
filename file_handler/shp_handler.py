@@ -29,7 +29,7 @@ class ShpHandler:
         intersected_dataframe = geopandas.overlay(self.data_frame, polygon).boundary
         polygon_boundary = polygon.boundary
         polygon_boundary = geopandas.GeoDataFrame(index=[0], geometry=polygon_boundary.geometry)
-        # The difference between interected polygon boundary and bounding box polygon boundary gives us the coastline
+        # The difference between intersected polygon boundary and bounding box polygon boundary gives us the coastline
         intersected_dataframe = geopandas.GeoDataFrame(geometry=intersected_dataframe.geometry)
         self.data_frame = geopandas.overlay(intersected_dataframe, polygon_boundary, "difference")
         return
@@ -175,4 +175,3 @@ class ShpHandler:
                 del p_list[counter + 1]
             counter += 1
         return p_list
-
