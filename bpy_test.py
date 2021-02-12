@@ -8,8 +8,10 @@ from file_handler.shp_handler import ShpHandler
 from exceptions.exceptions import SmoothingError
 
 # ONGOING: controllo qualitá griglia
-# TODO: gestire due coste contemporaneamente
-# TODO: filtro su poligono shapefile
+# TODO: documentazione con sphinx
+# TODO: gestire isola (mesh type 2)
+# TODO: gestire singola costa senza punti mare (mesh tyoe 3)
+# TODO: gestire più coste contemporaneamente (mesh type 4, 5), simile al 3
 
 
 def str2bool(v):
@@ -48,7 +50,7 @@ def create_parser():
                           default="0.01")
     l_parser.add_argument("@a", "@@attractors_islands", type=str2bool, nargs='?', const=True, default=True,
                           help="All islands found will be used as attractors")
-    l_parser.add_argument("@c", "@@distance_coeff", type=int, nargs='?', default=1,
+    l_parser.add_argument("@c", "@@distance_coeff", type=float, nargs='?', default=1,
                           help="Coefficient")
     l_args = l_parser.parse_args()
     return l_args
@@ -90,10 +92,10 @@ def prompt_for_mesh_data(p_debug=True):
         lc_max = 0.03
         lc_min = 0.005
     else:
-        dist_max = input("\nInsert DistMax: ")
-        dist_min = input("\nInsert DistMin: ")
-        lc_max = input("\nInsert LcMax: ")
-        lc_min = input("\nInsert LcMin: ")
+        dist_max = input("\nInsert L_open: ")
+        dist_min = input("\nInsert L_coast: ")
+        lc_max = input("\nInsert Delta_open: ")
+        lc_min = input("\nInsert Delta_coast: ")
     return {
         "DistMax": float(dist_max),
         "DistMin": float(dist_min),
@@ -113,8 +115,8 @@ def plot_shapefile(p_dataframe):
 
 def generate_mesh(file=None):
     # os.system("gmsh -2 {} -o ./msh/temp.msh".format(file))
-    os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
-    # os.system("gmsh-win\\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
+    # os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
+    os.system("gmsh-win\\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
 
 
 def read_data_from_msh(file):
@@ -202,7 +204,7 @@ def ww3_to_grd(file):
 
 
 if __name__ == "__main__":
-    debug = True
+    debug = False
     args = create_parser()
     input_shapefile = args.input_shapefile
     dominion_file = args.output_directory + "/result_shapefile.shp"
@@ -219,8 +221,8 @@ if __name__ == "__main__":
             #                                                    args.sea_points, float(args.smoothing_degree))
             plot_shapefile(dominion_data_frame)
             is_fine = "y" if debug else input("\nIs this fine? Y or N ")
-        except SmoothingError:
-            pass
+        except SmoothingError as e:
+            print(e)
         if is_fine.lower() != "y":
             args = prompt_for_boundary_data(args)
 
@@ -232,20 +234,23 @@ if __name__ == "__main__":
     mesh_params["distance_coeff"] = args.distance_coeff
     writer = GeoWriter(dominion_data_frame, mesh_params)
     while is_fine_mesh.lower() != "y":
-        writer.shapefile_to_geo()
-        # shapefile_to_geo(dominion_data_frame, mesh_params)
-        generate_mesh("./msh/temp.geo_unrolled")
+        result_code = writer.shapefile_to_geo()
+        if result_code:
+            is_fine_mesh = "n"
+        else:
+            generate_mesh("./msh/temp.geo_unrolled")
 
-        gmsh.initialize()
-        gmsh.open("./msh/temp.msh")
-        gmsh.fltk.run()
-        gmsh.finalize()
-        is_fine_mesh = "y" if debug else input("\nIs this fine? Y or N ")
+            gmsh.initialize()
+            gmsh.open("./msh/temp.msh")
+            gmsh.fltk.run()
+            gmsh.finalize()
+            is_fine_mesh = "y" if debug else input("\nIs this fine? Y or N ")
         if is_fine_mesh.lower() != "y":
-            mesh_params = prompt_for_mesh_data()
+            mesh_params = prompt_for_mesh_data(debug)
             mesh_params["extra_points"] = extra_points
             mesh_params["islands_attractors"] = args.attractors_islands
             mesh_params["distance_coeff"] = args.distance_coeff
+            writer.clean(mesh_params)
 
     try:
         dominion_data_frame.to_file(dominion_file)

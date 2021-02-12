@@ -25,13 +25,15 @@ class ShpHandler:
             self.__polygons_to_linestring__()
 
     def __polygons_to_linestring__(self):
+        # TODO: fix issue with intersected different from original polygon (boundary slightly different).
+        #  For the moment hot fix take lat of first point of coast
         # Create a polygon from the bounding box
         if len(self.bbox) == 4:
             lons_poly = [self.bbox[0], self.bbox[2], self.bbox[2], self.bbox[0]]
             lats_poly = [self.bbox[1], self.bbox[1], self.bbox[3], self.bbox[3]]
         else:
-            lons_poly = [coord for index, coord in enumerate(self.bbox) if index%2 == 0]
-            lats_poly = [coord for index, coord in enumerate(self.bbox) if index%2 == 1]
+            lons_poly = [coord for index, coord in enumerate(self.bbox) if index % 2 == 0]
+            lats_poly = [coord for index, coord in enumerate(self.bbox) if index % 2 == 1]
         polygon_geom = Polygon(zip(lons_poly, lats_poly))
         polygon = geopandas.GeoDataFrame(index=[0], geometry=[polygon_geom])
         # Intersect bounding box polygon with dataframe polygon and extract the boundary

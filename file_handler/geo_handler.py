@@ -6,6 +6,7 @@ class GeoWriter:
 
     def __init__(self, p_dataframe, p_mesh_params, file="./msh/temp.geo_unrolled"):
         self.fp = open(file, "w")
+        self.file = file
         self.coastline_index = list(p_dataframe.types).index("coastline")
         self.counter = 0
         self.point_counter = 1
@@ -93,11 +94,16 @@ class GeoWriter:
 
         # Create and impose attractors at "safety distance" from boundaries ON THE COAST.
         # To be revised when working on multiple coastlines
-        first_point = self.__dicotomic_search_attractors__(interval_first, attractors_min_distance_km, coastline_points[0])
-        second_point = self.__dicotomic_search_attractors__(interval_second, attractors_min_distance_km, coastline_points[-1])
-        self.__points_to_geo__([first_point, second_point])
-        self.imposed_attractors = [self.point_counter-1, self.point_counter-2]
-        return
+        try:
+            first_point = self.__dicotomic_search_attractors__(interval_first, attractors_min_distance_km, coastline_points[0])
+            second_point = self.__dicotomic_search_attractors__(interval_second, attractors_min_distance_km, coastline_points[-1])
+            self.__points_to_geo__([first_point, second_point])
+            self.imposed_attractors = [self.point_counter - 1, self.point_counter - 2]
+        except UnboundLocalError as e:
+            print("Your d_bound is off, I cannot find any legal attractor. "
+                  "Please check c_bound and delta_open parameters")
+            return 1
+        return 0
 
     def __attractors_to_geo__(self):
         attractors_buffer = "Field[1].NodesList = {"
@@ -121,7 +127,7 @@ class GeoWriter:
         self.fp.write("Field[2].LcMax = {};\n".format(self.mesh_params["LcMax"]))
         self.fp.write("Field[2].LcMin = {};\n".format(self.mesh_params["LcMin"]))
         self.fp.write("Background Field = 2;\n")
-        self.fp.write("Mesh.Algorithm = 5;\n")
+        self.fp.write("Mesh.Algorithm = 6;\n")
         self.fp.write("Mesh.CharacteristicLengthExtendFromBoundary = 0;\n")
         return
 
@@ -140,7 +146,27 @@ class GeoWriter:
 
         self.__planes_to_geo__()
 
-        self.__find_attractors__()
+        result_code = self.__find_attractors__()
+        if result_code:
+            return result_code
         self.__mesh_params_to_geo__()
         self.fp.close()
-        return
+        return result_code
+
+    def clean(self, p_mesh_params):
+        self.fp = open(self.file, 'w')
+        self.counter = 0
+        self.point_counter = 1
+        self.start_point = 1
+        self.end_point = None
+        self.line_counter = 1
+        self.line_loop_counter = 1
+        self.curve_loops = []
+        self.points = []
+        self.mesh_params = p_mesh_params
+        self.first_attractor = None
+        self.last_attractor = None
+        self.end_coastline = None
+        self.start_coastline = None
+        self.other_attractors = []
+        self.imposed_attractors = []
