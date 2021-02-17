@@ -7,7 +7,9 @@ class GeoWriter:
     def __init__(self, p_dataframe, p_mesh_params, file="./msh/temp.geo_unrolled"):
         self.fp = open(file, "w")
         self.file = file
-        self.coastline_index = list(p_dataframe.types).index("coastline")
+        self.mesh_type = p_mesh_params["mesh_type"]
+        self.coastline_index = list(p_dataframe.types).index("coastline") if self.mesh_type != 2 else None
+        self.closure_index = list(p_dataframe.types).index("dominion_closure") if self.mesh_type == 2 else None
         self.counter = 0
         self.point_counter = 1
         self.start_point = 1
@@ -72,37 +74,40 @@ class GeoWriter:
             return self.__dicotomic_search_attractors__([mid_point, interval[1]], distance, point)
 
     def __find_attractors__(self):
-        attractors_min_distance_km = self.mesh_params["LcMax"] * 100 * self.mesh_params["distance_coeff"]
-        coastline_points = self.points[self.start_coastline - 1:self.end_coastline - self.mesh_params["extra_points"]]
-        # If there are islands add islands as attractors (if required)
-        if self.mesh_params["islands_attractors"] and \
-                not (len(self.points) == self.end_coastline and self.start_coastline == 1):
-            if self.start_coastline == 1:
-                self.other_attractors = [(self.end_coastline + 1, len(self.points))]
-            elif self.end_coastline == len(self.points):
-                self.other_attractors = [(1, self.start_coastline - 1)]
-            else:
-                self.other_attractors = [(1, self.start_coastline - 1), (self.end_coastline + 1, len(self.points))]
-        for index, point in enumerate(coastline_points):
-            if self.first_attractor is None and dist(coastline_points[0], point).km >= attractors_min_distance_km:
-                interval_first = [coastline_points[index-1], coastline_points[index]]
-                self.first_attractor = self.start_coastline + index
-            if self.first_attractor is not None and dist(coastline_points[-1], point).km <= attractors_min_distance_km:
-                interval_second = [coastline_points[index-1], coastline_points[index]]
-                self.last_attractor = self.start_coastline + index - 1
-                break
+        if self.mesh_type == 1:
+            attractors_min_distance_km = self.mesh_params["LcMax"] * 100 * self.mesh_params["distance_coeff"]
+            coastline_points = self.points[self.start_coastline - 1:self.end_coastline - self.mesh_params["extra_points"]]
+            # If there are islands add islands as attractors (if required)
+            if self.mesh_params["islands_attractors"] and \
+                    not (len(self.points) == self.end_coastline and self.start_coastline == 1):
+                if self.start_coastline == 1:
+                    self.other_attractors = [(self.end_coastline + 1, len(self.points))]
+                elif self.end_coastline == len(self.points):
+                    self.other_attractors = [(1, self.start_coastline - 1)]
+                else:
+                    self.other_attractors = [(1, self.start_coastline - 1), (self.end_coastline + 1, len(self.points))]
+            for index, point in enumerate(coastline_points):
+                if self.first_attractor is None and dist(coastline_points[0], point).km >= attractors_min_distance_km:
+                    interval_first = [coastline_points[index-1], coastline_points[index]]
+                    self.first_attractor = self.start_coastline + index
+                if self.first_attractor is not None and dist(coastline_points[-1], point).km <= attractors_min_distance_km:
+                    interval_second = [coastline_points[index-1], coastline_points[index]]
+                    self.last_attractor = self.start_coastline + index - 1
+                    break
 
-        # Create and impose attractors at "safety distance" from boundaries ON THE COAST.
-        # To be revised when working on multiple coastlines
-        try:
-            first_point = self.__dicotomic_search_attractors__(interval_first, attractors_min_distance_km, coastline_points[0])
-            second_point = self.__dicotomic_search_attractors__(interval_second, attractors_min_distance_km, coastline_points[-1])
-            self.__points_to_geo__([first_point, second_point])
-            self.imposed_attractors = [self.point_counter - 1, self.point_counter - 2]
-        except UnboundLocalError as e:
-            print("Your d_bound is off, I cannot find any legal attractor. "
-                  "Please check c_bound and delta_open parameters")
-            return 1
+            # Create and impose attractors at "safety distance" from boundaries ON THE COAST.
+            # To be revised when working on multiple coastlines
+            try:
+                first_point = self.__dicotomic_search_attractors__(interval_first, attractors_min_distance_km, coastline_points[0])
+                second_point = self.__dicotomic_search_attractors__(interval_second, attractors_min_distance_km, coastline_points[-1])
+                self.__points_to_geo__([first_point, second_point])
+                self.imposed_attractors = [self.point_counter - 1, self.point_counter - 2]
+            except UnboundLocalError as e:
+                print("Your d_bound is off, I cannot find any legal attractor. "
+                      "Please check c_bound and delta_open parameters")
+                return 1
+        elif self.mesh_type == 2:
+            self.other_attractors = [(1, len(self.points) - self.mesh_params["extra_points"])]
         return 0
 
     def __attractors_to_geo__(self):
@@ -127,7 +132,7 @@ class GeoWriter:
         self.fp.write("Field[2].LcMax = {};\n".format(self.mesh_params["LcMax"]))
         self.fp.write("Field[2].LcMin = {};\n".format(self.mesh_params["LcMin"]))
         self.fp.write("Background Field = 2;\n")
-        self.fp.write("Mesh.Algorithm = 6;\n")
+        self.fp.write("Mesh.Algorithm = 5;\n")
         self.fp.write("Mesh.CharacteristicLengthExtendFromBoundary = 0;\n")
         return
 

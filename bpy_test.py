@@ -7,9 +7,8 @@ from file_handler.geo_handler import GeoWriter
 from file_handler.shp_handler import ShpHandler
 from exceptions.exceptions import SmoothingError
 
-# ONGOING: controllo qualitá griglia
+# TODO: controllo qualitá griglia
 # TODO: documentazione con sphinx
-# TODO: gestire isola (mesh type 2)
 # TODO: gestire singola costa senza punti mare (mesh tyoe 3)
 # TODO: gestire più coste contemporaneamente (mesh type 4, 5), simile al 3
 
@@ -27,7 +26,6 @@ def str2bool(v):
 
 def create_parser():
     l_parser = argparse.ArgumentParser(prefix_chars='@')
-    # defaults are for Fiumicino for testing reasons. For Qatar:
     # python bpy_test.py @i "./shp/qatar-line.shp" @s 56.441,25.533 56.525,24.8
     # or for test with bounding box:
     # python bpy_test.py @i "./shp/qatar-line.shp" @s 56.441,25.4 56.525,25.000 @b 56.332 25.4 56.525 25.000
@@ -35,7 +33,7 @@ def create_parser():
     # python bpy_test.py @i "./shp/GSHHS_h_L1.shp" @s 56.441,25.4 56.525,25.000 @b 56.332 25.4 56.525 25.000
 
     l_parser.add_argument("@i", "@@input_shapefile", help="Shapefile to use as input",
-                          default="./shp/fiumicino-line.shp")
+                          default="./shp/GSHHS_h_L1.shp")
     l_parser.add_argument("@b", "@@bbox", nargs="+",
                           help="Bounding box for the shapefile. e.g. lon_up_sx lat_up_sx lon_down_dx lat_down_dx")
     l_parser.add_argument("@s", "@@sea_points", nargs="+",
@@ -57,17 +55,17 @@ def create_parser():
 
 
 def prompt_for_boundary_data(p_args):
-    change_bbox = input("\nWould you like to change bounding box? Y or N ")
+    change_bbox = input("\nWould you like to change bounding polygon? Y or N ")
     change_sea_points = input("\nWould you like to change sea points? Y or N ")
     change_smoothing_degree = input("\nWould you like to change smoothing degree? Y or N ")
     sea_points = []
     if change_bbox.lower() == "y":
-        bbox = [
-            input("\nInsert longitude of NE point "),
-            input("\nInsert latitude of NE point "),
-            input("\nInsert longitude of SW point "),
-            input("\nInsert latitude of SW point ")
-        ]
+        bbox = []
+        another_point = "Y"
+        while another_point.lower() == "y":
+            bbox.append(input("\nInsert longitude of bounding polygon point "))
+            bbox.append(input("\nInsert latitude of bounding polygon point "))
+            another_point = input("\nDo you need another bounding polygon point? Y or N ")
         setattr(args, "bbox", bbox)
     if change_sea_points.lower() == "y":
         another_point = "Y"
@@ -115,8 +113,8 @@ def plot_shapefile(p_dataframe):
 
 def generate_mesh(file=None):
     # os.system("gmsh -2 {} -o ./msh/temp.msh".format(file))
-    # os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
-    os.system("gmsh-win\\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
+    os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
+    # os.system("gmsh-win\\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
 
 
 def read_data_from_msh(file):
@@ -208,6 +206,7 @@ if __name__ == "__main__":
     args = create_parser()
     input_shapefile = args.input_shapefile
     dominion_file = args.output_directory + "/result_shapefile.shp"
+    mesh_type = None
 
     # Dominion creation
     is_fine = "N"
@@ -217,8 +216,7 @@ if __name__ == "__main__":
             shp_handler.prepare_to_close()
             dominion_data_frame, extra_points = shp_handler.close_dominion(args.threshold, args.sea_points,
                                                                            float(args.smoothing_degree))
-            # dominion_data_frame, extra_points = close_dominion(input_shapefile, args.bbox, args.threshold,
-            #                                                    args.sea_points, float(args.smoothing_degree))
+            mesh_type = shp_handler.mesh_type
             plot_shapefile(dominion_data_frame)
             is_fine = "y" if debug else input("\nIs this fine? Y or N ")
         except SmoothingError as e:
@@ -232,6 +230,7 @@ if __name__ == "__main__":
     mesh_params["extra_points"] = extra_points
     mesh_params["islands_attractors"] = args.attractors_islands
     mesh_params["distance_coeff"] = args.distance_coeff
+    mesh_params["mesh_type"] = mesh_type
     writer = GeoWriter(dominion_data_frame, mesh_params)
     while is_fine_mesh.lower() != "y":
         result_code = writer.shapefile_to_geo()
@@ -250,6 +249,7 @@ if __name__ == "__main__":
             mesh_params["extra_points"] = extra_points
             mesh_params["islands_attractors"] = args.attractors_islands
             mesh_params["distance_coeff"] = args.distance_coeff
+            mesh_params["mesh_type"] = mesh_type
             writer.clean(mesh_params)
 
     try:

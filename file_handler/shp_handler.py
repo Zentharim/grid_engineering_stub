@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 class ShpHandler:
 
     def __init__(self, p_shapefile, p_bbox):
+        self.mesh_type = None
         self.bbox = p_bbox
         if self.bbox:
             self.bbox = [float(coord) for coord in self.bbox]
@@ -68,19 +69,37 @@ class ShpHandler:
             sea_points.append(coords)
 
         # ok for 1,2, and 3 point of dominion bbox (no model over islands, we have a coastline)
-        index_of_coastline = [idx for idx, part in enumerate(new_data_frame.geometry) if not part.is_ring][0]
+        try:
+            coastlines = [idx for idx, part in enumerate(new_data_frame.geometry) if not part.is_ring]
+            index_of_coastline = coastlines[0]
+            if len(coastlines) == 1:
+                self.mesh_type = 1 if sea_points else 3
+            else:
+                self.mesh_type = 4
+                index_of_coastline = None
+        except IndexError:
+            self.mesh_type = 2
+            index_of_coastline = None
         self.matrix = [list(part.coords) for part in new_data_frame.geometry]
 
-        coastline = self.matrix[index_of_coastline]
-        self.__orient_coastline__(coastline, sea_points)
+        coastline = None
+        if index_of_coastline is not None:
+            coastline = self.matrix[index_of_coastline]
+            self.__orient_coastline__(coastline, sea_points)
         dominion_closure = self.__create_closure__(coastline, sea_points, p_smoothing_degree)
-        coastline[-1:-1] = dominion_closure
-        coastline[-1] = coastline[0]
+        if index_of_coastline is not None:
+            coastline[-1:-1] = dominion_closure
+            coastline[-1] = coastline[0]
+        else:
+            self.matrix.append(dominion_closure)
         for index, line in enumerate(self.matrix):
             self.matrix[index] = self.remove_doubles(self.matrix[index])
         linestrings = [LineString(line) for line in self.matrix]
         types = ["island"] * len(self.matrix)
-        types[index_of_coastline] = "coastline"
+        if index_of_coastline is not None:
+            types[index_of_coastline] = "coastline"
+        else:
+            types[-1] = "dominion_closure"
         return geopandas.GeoDataFrame({"geometry": linestrings, "types": types}), len(dominion_closure)
 
     def __merge_parts__(self, p_threshold=0.001):
@@ -156,17 +175,25 @@ class ShpHandler:
         return
 
     def __create_closure__(self, p_coastline, p_sea_points, p_smoothing_degree):
-        start_coast = p_coastline[0]
-        end_coast = p_coastline[-1]
+        if p_coastline is not None:
+            start_coast = p_coastline[0]
+            end_coast = p_coastline[-1]
 
-        dominion_closure = [end_coast]
-        distances_from_end = [dist(end_coast, sea_point).km for sea_point in p_sea_points]
-        copy_of_distances = distances_from_end.copy()
-        while copy_of_distances:
-            dominion_closure.append(p_sea_points[distances_from_end.index(min(copy_of_distances))])
-            copy_of_distances.remove(min(copy_of_distances))
-        dominion_closure.append(start_coast)
-        dominion_closure = self.__smooth_corners__(LineString(dominion_closure), p_smoothing_degree)
+            dominion_closure = [end_coast]
+            distances_from_end = [dist(end_coast, sea_point).km for sea_point in p_sea_points]
+            copy_of_distances = distances_from_end.copy()
+            while copy_of_distances:
+                dominion_closure.append(p_sea_points[distances_from_end.index(min(copy_of_distances))])
+                copy_of_distances.remove(min(copy_of_distances))
+            dominion_closure.append(start_coast)
+            dominion_closure = self.__smooth_corners__(LineString(dominion_closure), p_smoothing_degree)
+        else:
+            # For now should be ok for mesh type 2
+            p_sea_points.append(p_sea_points[0])
+            dominion_closure = p_sea_points
+            # Probably can be done in smooth_corners just by checking if closed ring or not
+            dominion_closure = LineString(dominion_closure).buffer(p_smoothing_degree, join_style=1, mitre_limit=1).exterior
+            dominion_closure = list(dominion_closure.coords)
         if not dominion_closure:
             raise SmoothingError
         return dominion_closure
