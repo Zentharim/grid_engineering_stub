@@ -74,7 +74,7 @@ class GeoWriter:
             return self.__dicotomic_search_attractors__([mid_point, interval[1]], distance, point)
 
     def __find_attractors__(self):
-        if self.mesh_type == 1:
+        if self.mesh_type == 1 or self.mesh_type == 3:
             attractors_min_distance_km = self.mesh_params["LcMax"] * 100 * self.mesh_params["distance_coeff"]
             coastline_points = self.points[self.start_coastline - 1:self.end_coastline - self.mesh_params["extra_points"]]
             # If there are islands add islands as attractors (if required)

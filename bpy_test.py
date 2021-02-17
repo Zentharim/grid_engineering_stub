@@ -31,6 +31,9 @@ def create_parser():
     # python bpy_test.py @i "./shp/qatar-line.shp" @s 56.441,25.4 56.525,25.000 @b 56.332 25.4 56.525 25.000
     # same with global file:
     # python bpy_test.py @i "./shp/GSHHS_h_L1.shp" @s 56.441,25.4 56.525,25.000 @b 56.332 25.4 56.525 25.000
+    # Malta (type 2):
+    # python bpy_test.py @b 13.9572 36.1917 15.3044 36.1906 15.3112 35.6713 13.9476 35.6133
+    # @s 13.9572,36.1917 15.3044,36.1906 15.3112,35.6713 13.9476,35.6133 @d 0.1
 
     l_parser.add_argument("@i", "@@input_shapefile", help="Shapefile to use as input",
                           default="./shp/GSHHS_h_L1.shp")
@@ -38,7 +41,8 @@ def create_parser():
                           help="Bounding box for the shapefile. e.g. lon_up_sx lat_up_sx lon_down_dx lat_down_dx")
     l_parser.add_argument("@s", "@@sea_points", nargs="+",
                           help="List of sea points where to close the dominion. e.g. lon1,lat1 lon2,lat2 ...",
-                          default=["11.992,41.872", "12.080,41.680"])
+                          default=[])
+                          # default=["11.992,41.872", "12.080,41.680"])
     l_parser.add_argument("@t", "@@threshold",
                           help="Threshold for the minimum distance to merge shapefile parts and remove double points",
                           default="0.001")
@@ -202,7 +206,7 @@ def ww3_to_grd(file):
 
 
 if __name__ == "__main__":
-    debug = False
+    debug = True
     args = create_parser()
     input_shapefile = args.input_shapefile
     dominion_file = args.output_directory + "/result_shapefile.shp"

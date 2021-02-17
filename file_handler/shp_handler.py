@@ -71,6 +71,7 @@ class ShpHandler:
         # ok for 1,2, and 3 point of dominion bbox (no model over islands, we have a coastline)
         try:
             coastlines = [idx for idx, part in enumerate(new_data_frame.geometry) if not part.is_ring]
+            print(len(coastlines))
             index_of_coastline = coastlines[0]
             if len(coastlines) == 1:
                 self.mesh_type = 1 if sea_points else 3
@@ -81,24 +82,28 @@ class ShpHandler:
             self.mesh_type = 2
             index_of_coastline = None
         self.matrix = [list(part.coords) for part in new_data_frame.geometry]
-
+        print(self.mesh_type)
         coastline = None
-        if index_of_coastline is not None:
+        if self.mesh_type == 1:
             coastline = self.matrix[index_of_coastline]
             self.__orient_coastline__(coastline, sea_points)
+        if self.mesh_type == 3:
+            coastline = self.matrix[index_of_coastline]
         dominion_closure = self.__create_closure__(coastline, sea_points, p_smoothing_degree)
-        if index_of_coastline is not None:
+        if self.mesh_type == 1:
             coastline[-1:-1] = dominion_closure
             coastline[-1] = coastline[0]
-        else:
+        elif self.mesh_type == 2:
             self.matrix.append(dominion_closure)
+        elif self.mesh_type == 3:
+            coastline.append(dominion_closure)
         for index, line in enumerate(self.matrix):
             self.matrix[index] = self.remove_doubles(self.matrix[index])
         linestrings = [LineString(line) for line in self.matrix]
         types = ["island"] * len(self.matrix)
-        if index_of_coastline is not None:
+        if self.mesh_type == 1 or self.mesh_type == 3:
             types[index_of_coastline] = "coastline"
-        else:
+        elif self.mesh_type == 2:
             types[-1] = "dominion_closure"
         return geopandas.GeoDataFrame({"geometry": linestrings, "types": types}), len(dominion_closure)
 
@@ -175,7 +180,8 @@ class ShpHandler:
         return
 
     def __create_closure__(self, p_coastline, p_sea_points, p_smoothing_degree):
-        if p_coastline is not None:
+        dominion_closure = []
+        if self.mesh_type == 1:
             start_coast = p_coastline[0]
             end_coast = p_coastline[-1]
 
@@ -187,23 +193,28 @@ class ShpHandler:
                 copy_of_distances.remove(min(copy_of_distances))
             dominion_closure.append(start_coast)
             dominion_closure = self.__smooth_corners__(LineString(dominion_closure), p_smoothing_degree)
-        else:
-            # For now should be ok for mesh type 2
+        elif self.mesh_type == 2:
             p_sea_points.append(p_sea_points[0])
             dominion_closure = p_sea_points
-            # Probably can be done in smooth_corners just by checking if closed ring or not
-            dominion_closure = LineString(dominion_closure).buffer(p_smoothing_degree, join_style=1, mitre_limit=1).exterior
-            dominion_closure = list(dominion_closure.coords)
+            dominion_closure = self.__smooth_corners__(LineString(dominion_closure), p_smoothing_degree)
+        elif self.mesh_type == 3:
+            start_coast = p_coastline[0]
+            dominion_closure = start_coast
         if not dominion_closure:
             raise SmoothingError
         return dominion_closure
 
-    @staticmethod
-    def __smooth_corners__(p_line, p_degree):
-        offset = p_line.parallel_offset(p_degree, "right", join_style=1)
+    def __smooth_corners__(self, p_line, p_degree):
+        if self.mesh_type == 1:
+            offset = p_line.parallel_offset(p_degree, "right", join_style=1)
 
-        offset2 = offset.parallel_offset(p_degree, "right", join_style=1)
-        return list(offset2.coords)[1:-1]
+            offset2 = offset.parallel_offset(p_degree, "right", join_style=1)
+            return list(offset2.coords)[1:-1]
+        elif self.mesh_type == 2:
+            closure = p_line.buffer(p_degree, join_style=1, mitre_limit=1).exterior
+            return list(closure.coords)
+        else:
+            return []
 
     @staticmethod
     def remove_doubles(p_list, p_threshold=0.001):
