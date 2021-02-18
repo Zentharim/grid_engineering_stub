@@ -7,9 +7,9 @@ from file_handler.geo_handler import GeoWriter
 from file_handler.shp_handler import ShpHandler
 from exceptions.exceptions import SmoothingError
 
+# TODO: Bugfix "taglio" poligono sbagliato (esempio: taranto qui sotto)
 # TODO: controllo qualitá griglia
 # TODO: documentazione con sphinx
-# TODO: gestire singola costa senza punti mare (mesh tyoe 3)
 # TODO: gestire più coste contemporaneamente (mesh type 4, 5), simile al 3
 
 
@@ -34,6 +34,8 @@ def create_parser():
     # Malta (type 2):
     # python bpy_test.py @b 13.9572 36.1917 15.3044 36.1906 15.3112 35.6713 13.9476 35.6133
     # @s 13.9572,36.1917 15.3044,36.1906 15.3112,35.6713 13.9476,35.6133 @d 0.1
+    # Taranto type 3
+    # python bpy_test.py @b 16.5583 39.3164 17.9920 40.3917 16.7835 40.8940 16.0474 39.7845
 
     l_parser.add_argument("@i", "@@input_shapefile", help="Shapefile to use as input",
                           default="./shp/GSHHS_h_L1.shp")

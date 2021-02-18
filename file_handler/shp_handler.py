@@ -54,7 +54,7 @@ class ShpHandler:
                     self.matrix.append(list(line.coords))
             except TypeError:
                 self.matrix.append(list(part.coords))
-        self.__merge_parts__(float(p_threshold))
+        self.__merge_parts__(None, float(p_threshold))
 
         # Creating dataframe
         linestrings = [LineString(line) for line in self.matrix]
@@ -69,26 +69,32 @@ class ShpHandler:
             sea_points.append(coords)
 
         # ok for 1,2, and 3 point of dominion bbox (no model over islands, we have a coastline)
+        index_of_coastlines = None
         try:
-            coastlines = [idx for idx, part in enumerate(new_data_frame.geometry) if not part.is_ring]
-            print(len(coastlines))
-            index_of_coastline = coastlines[0]
-            if len(coastlines) == 1:
+            index_of_coastlines = [idx for idx, part in enumerate(new_data_frame.geometry) if not part.is_ring]
+            # This assignment is needed to trigger the exception
+            trigger = index_of_coastlines[0]
+            if len(index_of_coastlines) == 1:
                 self.mesh_type = 1 if sea_points else 3
             else:
                 self.mesh_type = 4
-                index_of_coastline = None
         except IndexError:
             self.mesh_type = 2
-            index_of_coastline = None
         self.matrix = [list(part.coords) for part in new_data_frame.geometry]
-        print(self.mesh_type)
         coastline = None
+
         if self.mesh_type == 1:
-            coastline = self.matrix[index_of_coastline]
+            del self.matrix[index_of_coastlines[0]][-1]
+            coastline = self.matrix[index_of_coastlines[0]]
             self.__orient_coastline__(coastline, sea_points)
-        if self.mesh_type == 3:
-            coastline = self.matrix[index_of_coastline]
+        elif self.mesh_type == 3:
+            del self.matrix[index_of_coastlines[0]][-1]
+            coastline = self.matrix[index_of_coastlines[0]]
+        elif self.mesh_type == 4:
+            for i in index_of_coastlines:
+                del self.matrix[index_of_coastlines[i]][-1]
+                del self.matrix[index_of_coastlines[i]][0]
+            coastline = [self.matrix[index_of_coastlines[i]] for i in index_of_coastlines]
         dominion_closure = self.__create_closure__(coastline, sea_points, p_smoothing_degree)
         if self.mesh_type == 1:
             coastline[-1:-1] = dominion_closure
@@ -97,24 +103,31 @@ class ShpHandler:
             self.matrix.append(dominion_closure)
         elif self.mesh_type == 3:
             coastline.append(dominion_closure)
+        elif self.mesh_type == 4:
+            self.matrix.append(dominion_closure)
         for index, line in enumerate(self.matrix):
             self.matrix[index] = self.remove_doubles(self.matrix[index])
         linestrings = [LineString(line) for line in self.matrix]
         types = ["island"] * len(self.matrix)
         if self.mesh_type == 1 or self.mesh_type == 3:
-            types[index_of_coastline] = "coastline"
+            types[index_of_coastlines[0]] = "coastline"
         elif self.mesh_type == 2:
             types[-1] = "dominion_closure"
+        elif self.mesh_type == 4:
+            types[-1] = "dominion_closure"
+            for i in index_of_coastlines:
+                types[index_of_coastlines[i]] = "coastline"
         return geopandas.GeoDataFrame({"geometry": linestrings, "types": types}), len(dominion_closure)
 
-    def __merge_parts__(self, p_threshold=0.001):
-        len_matrix = len(self.matrix)
+    def __merge_parts__(self, p_matrix=None, p_threshold=0.001):
+        matrix = self.matrix if p_matrix is None else p_matrix
+        len_matrix = len(matrix)
         index = 0
-        while index < len(self.matrix):
+        while index < len(matrix):
             other_index = index + 1
-            while other_index < len(self.matrix):
-                part = self.matrix[index]
-                other_part = self.matrix[other_index]
+            while other_index < len(matrix):
+                part = matrix[index]
+                other_part = matrix[other_index]
 
                 distances = [
                     dist(part[0], other_part[0]).km,
@@ -124,20 +137,20 @@ class ShpHandler:
                 ]
 
                 if min(distances) < p_threshold:
-                    self.matrix[index] = self.__arrange_parts__(part, other_part, distances.index(min(distances)))
+                    matrix[index] = self.__arrange_parts__(part, other_part, distances.index(min(distances)))
                 else:
                     other_index += 1
                     continue
 
                 try:
-                    del self.matrix[other_index]
+                    del matrix[other_index]
                 except IndexError:
                     pass
             index += 1
-        if len_matrix == len(self.matrix):
-            return
-        self.__merge_parts__(p_threshold)
-        return
+        if len_matrix == len(matrix):
+            return matrix
+        self.__merge_parts__(matrix, p_threshold)
+        return matrix
 
     @staticmethod
     def __arrange_parts__(p_part_one, p_part_two, p_situation):
@@ -179,6 +192,22 @@ class ShpHandler:
                 p_coastline.reverse()
         return
 
+    @staticmethod
+    def __order_by_distance_(p_coastline):
+        coast = p_coastline[0]
+        min_distances = []
+        for other_coast in p_coastline:
+            min_distances.append(min([
+                dist(coast[0], other_coast[0]).km,
+                dist(coast[0], other_coast[-1]).km,
+                dist(coast[-1], other_coast[0]).km,
+                dist(coast[-1], other_coast[-1]).km
+            ]))
+        zipped = zip(min_distances, p_coastline)
+        sorted_zip = sorted(zipped)
+        p_coastline = [coast for _, coast in sorted_zip]
+        return p_coastline
+
     def __create_closure__(self, p_coastline, p_sea_points, p_smoothing_degree):
         dominion_closure = []
         if self.mesh_type == 1:
@@ -200,6 +229,10 @@ class ShpHandler:
         elif self.mesh_type == 3:
             start_coast = p_coastline[0]
             dominion_closure = start_coast
+        elif self.mesh_type == 4:
+            p_coastline = self.__order_by_distance_(p_coastline)
+            dominion_closure = self.__merge_parts__(p_coastline, 10000)[0]
+            dominion_closure.append(dominion_closure[0])
         if not dominion_closure:
             raise SmoothingError
         return dominion_closure

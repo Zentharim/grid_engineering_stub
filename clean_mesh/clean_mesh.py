@@ -12,10 +12,14 @@ def checkQuads(faces):
 
 # Come dovrebbe funzionare il confronto tra link edges e link faces con l'msh?!
 def wrongConnectivity(vs):
+    # un triangolo ha contatto non tramite edge con triangoli vicini
+    # edge come set di edge tirati via da triangoli
+    # possibile soluzione: chiudere
     return [v for v in vs if (len(v.link_edges) - 2) == (len(v.link_faces))]
 
 
 def nestedTri(vs):
+    # Trovarlo lo si trova avendo link edges, per risolvere si eplode il nodo centrale (e i tre triangoli interni)
     return [v for v in vs if (len(v.link_edges) == 3) and (len(v.link_faces) == 3)]
 
 

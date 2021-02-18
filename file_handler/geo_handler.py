@@ -137,17 +137,19 @@ class GeoWriter:
         return
 
     def shapefile_to_geo(self):
-        for shape in self.dataframe.geometry:
-            self.__points_to_geo__(list(shape.coords)[:-1])
+        for shape, shape_type in zip(self.dataframe.geometry, self.dataframe.types):
+            print(shape_type)
+            if self.mesh_type != 4 or shape_type != "coastline":
+                self.__points_to_geo__(list(shape.coords)[:-1])
 
-            shape_lines = self.__lines_to_geo__()
+                shape_lines = self.__lines_to_geo__()
 
-            self.__line_loops_to_geo__(shape_lines)
-            if self.counter == self.coastline_index:
-                self.end_coastline = self.end_point
-                self.start_coastline = self.start_point
-            self.start_point = self.point_counter
-            self.counter += 1
+                self.__line_loops_to_geo__(shape_lines)
+                if self.counter == self.coastline_index:
+                    self.end_coastline = self.end_point
+                    self.start_coastline = self.start_point
+                self.start_point = self.point_counter
+                self.counter += 1
 
         self.__planes_to_geo__()
 
