@@ -7,10 +7,10 @@ from file_handler.geo_handler import GeoWriter
 from file_handler.shp_handler import ShpHandler
 from exceptions.exceptions import SmoothingError
 
-# TODO: Bugfix "taglio" poligono sbagliato (esempio: taranto qui sotto)
 # TODO: controllo qualitá griglia
 # TODO: documentazione con sphinx
-# TODO: gestire più coste contemporaneamente (mesh type 4, 5), simile al 3
+# TODO: gestire più coste contemporaneamente (mesh type 4, 5). Abbiamo chiusura dominio, mancano attrattori
+# TODO: fix bug disallineamento poligoni
 
 
 def str2bool(v):
@@ -36,6 +36,11 @@ def create_parser():
     # @s 13.9572,36.1917 15.3044,36.1906 15.3112,35.6713 13.9476,35.6133 @d 0.1
     # Taranto type 3
     # python bpy_test.py @b 16.5583 39.3164 17.9920 40.3917 16.7835 40.8940 16.0474 39.7845
+    # Isola d'Elba type 4
+    # python bpy_test.py @b 9.3705 42.7426 10.9828 42.8283 11.1942 42.6053 9.3279 42.4018
+    # Isola d'Elba con bug dovuto a disallineamento poligoni
+    # python bpy_test.py @b 9.3705 42.7426 10.2851 42.7789 10.9828 42.8283 11.1942 42.6053 9.3279 42.4018
+    # python bpy_test.py @b 16.5 39 15.7396 40.8345 10.2000 45.9198 15.2823 46.3002 21.0179 41.6303 20.7283 39.0661
 
     l_parser.add_argument("@i", "@@input_shapefile", help="Shapefile to use as input",
                           default="./shp/GSHHS_h_L1.shp")
@@ -44,7 +49,6 @@ def create_parser():
     l_parser.add_argument("@s", "@@sea_points", nargs="+",
                           help="List of sea points where to close the dominion. e.g. lon1,lat1 lon2,lat2 ...",
                           default=[])
-                          # default=["11.992,41.872", "12.080,41.680"])
     l_parser.add_argument("@t", "@@threshold",
                           help="Threshold for the minimum distance to merge shapefile parts and remove double points",
                           default="0.001")
@@ -91,8 +95,12 @@ def prompt_for_boundary_data(p_args):
 
 def prompt_for_mesh_data(p_debug=True):
     if p_debug:
+        # dist_max = 0.1
+        # dist_min = 0.05
+        # lc_max = 0.03
+        # lc_min = 0.005
         dist_max = 0.1
-        dist_min = 0.05
+        dist_min = 0.04
         lc_max = 0.03
         lc_min = 0.005
     else:
@@ -108,9 +116,9 @@ def prompt_for_mesh_data(p_debug=True):
     }
 
 
-def plot_shapefile(p_dataframe):
+def plot_shapefile(p_dataframe, p_mesh_type):
     plt.figure()
-    for shape in [list(part.coords) for part in p_dataframe.geometry]:
+    for shape, shape_type in zip([list(part.coords) for part in p_dataframe.geometry], p_dataframe.types):
         x = [i[0] for i in shape]
         y = [i[1] for i in shape]
         plt.plot(x, y)
@@ -119,8 +127,8 @@ def plot_shapefile(p_dataframe):
 
 def generate_mesh(file=None):
     # os.system("gmsh -2 {} -o ./msh/temp.msh".format(file))
-    os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
-    # os.system("gmsh-win\\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
+    # os.system("gmsh-mac/Gmsh.app/Contents/MacOS/gmsh -2 {} -o ./msh/temp.msh".format(file))
+    os.system("gmsh-win\\gmsh.exe -2 {} -o ./msh/temp.msh".format(file))
 
 
 def read_data_from_msh(file):
@@ -223,7 +231,7 @@ if __name__ == "__main__":
             dominion_data_frame, extra_points = shp_handler.close_dominion(args.threshold, args.sea_points,
                                                                            float(args.smoothing_degree))
             mesh_type = shp_handler.mesh_type
-            plot_shapefile(dominion_data_frame)
+            plot_shapefile(dominion_data_frame, mesh_type)
             is_fine = "y" if debug else input("\nIs this fine? Y or N ")
         except SmoothingError as e:
             print(e)

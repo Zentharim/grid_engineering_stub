@@ -27,7 +27,7 @@ class ShpHandler:
 
     def __polygons_to_linestring__(self):
         # TODO: fix issue with intersected different from original polygon (boundary slightly different).
-        #  For the moment hot fix take lat of first point of coast
+        #  For the moment hot fix remove last point of shapes (later on in the code)
         # Create a polygon from the bounding box
         if len(self.bbox) == 4:
             lons_poly = [self.bbox[0], self.bbox[2], self.bbox[2], self.bbox[0]]
@@ -95,7 +95,7 @@ class ShpHandler:
                 del self.matrix[index_of_coastlines[i]][-1]
                 del self.matrix[index_of_coastlines[i]][0]
             coastline = [self.matrix[index_of_coastlines[i]] for i in index_of_coastlines]
-        dominion_closure = self.__create_closure__(coastline, sea_points, p_smoothing_degree)
+        dominion_closure = self.__create_closure__(coastline, index_of_coastlines, sea_points, p_smoothing_degree)
         if self.mesh_type == 1:
             coastline[-1:-1] = dominion_closure
             coastline[-1] = coastline[0]
@@ -192,8 +192,7 @@ class ShpHandler:
                 p_coastline.reverse()
         return
 
-    @staticmethod
-    def __order_by_distance_(p_coastline):
+    def __order_by_distance_(self, p_coastline, p_coastline_indexes):
         coast = p_coastline[0]
         min_distances = []
         for other_coast in p_coastline:
@@ -205,10 +204,13 @@ class ShpHandler:
             ]))
         zipped = zip(min_distances, p_coastline)
         sorted_zip = sorted(zipped)
-        p_coastline = [coast for _, coast in sorted_zip]
-        return p_coastline
+        new_coastline = []
+        for index, (_, coast) in enumerate(sorted_zip):
+            new_coastline.append(coast)
+            self.matrix[p_coastline_indexes[index]] = coast
+        return new_coastline
 
-    def __create_closure__(self, p_coastline, p_sea_points, p_smoothing_degree):
+    def __create_closure__(self, p_coastline, p_coastline_indexes, p_sea_points, p_smoothing_degree):
         dominion_closure = []
         if self.mesh_type == 1:
             start_coast = p_coastline[0]
@@ -230,9 +232,10 @@ class ShpHandler:
             start_coast = p_coastline[0]
             dominion_closure = start_coast
         elif self.mesh_type == 4:
-            p_coastline = self.__order_by_distance_(p_coastline)
-            dominion_closure = self.__merge_parts__(p_coastline, 10000)[0]
+            p_coastline_ordered = self.__order_by_distance_(p_coastline, p_coastline_indexes)
+            dominion_closure = self.__merge_parts__(p_coastline_ordered, 10000)[0]
             dominion_closure.append(dominion_closure[0])
+
         if not dominion_closure:
             raise SmoothingError
         return dominion_closure
